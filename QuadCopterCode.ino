@@ -1,13 +1,24 @@
-#include "mpu9250_arduino.h"
+//#include "mpu9250_code"
 #include <Wire.h>
 #include <TimerOne.h>
 
 // Interrupt flag for MPU 9250 (??)
 volatile bool intFlag_MPU9250 = false;
-int accel_range = 8; // 16, 8, 4, 2   (g's)
-int gyro_range = 2000;  // 2000, 1000, 500, 250 (deg/sec)
-float mpu9250_scaling[3]; // for storing the MPU9250 scaling/resolution data
-float mpu9250_offset[3]; // for taring the IMU during setup
+
+#define    GYRO_FULL_SCALE_250_DPS    0x00  
+#define    GYRO_FULL_SCALE_500_DPS    0x08
+#define    GYRO_FULL_SCALE_1000_DPS   0x10
+#define    GYRO_FULL_SCALE_2000_DPS   0x18  // degree per second
+
+#define    ACC_FULL_SCALE_2_G        0x00  
+#define    ACC_FULL_SCALE_4_G        0x08
+#define    ACC_FULL_SCALE_8_G        0x10
+#define    ACC_FULL_SCALE_16_G       0x18  //g's (9.81 m/s^2)
+
+uint8_t accel_range = ACC_FULL_SCALE_16_G;
+uint8_t gyro_range = GYRO_FULL_SCALE_500_DPS; 
+//float mpu9250_scaling[3]; // for storing the MPU9250 scaling/resolution data
+//float mpu9250_offset[3]; // for taring the IMU during setup
 
 // Accelerometer
 volatile float a[3];
@@ -27,7 +38,7 @@ void setup() {
     x[i] = 0.0f;
   }
   // Set up the MPU 9250 IMU board
-  setup_mpu9250(accel_range, gyro_range, mpu9250_scaling);
+  setup_mpu9250(accel_range, gyro_range);
   
 //  pinMode(13, OUTPUT);
   Timer1.initialize(update_state_deltaT);         // initialize timer1, and set a 1/2 second period
@@ -39,14 +50,14 @@ void setup() {
 
 void loop() {
 
-  read_mpu9250(a, g, m,  mpu9250_scaling); //&intFlag_MPU9250,
-  delay(100);
-  Serial.print(a[0],3);
-  Serial.print ("\t");
-  Serial.print(x[0],6);
-  Serial.print ("\t");
-  Serial.print(t_last,3);
-  Serial.print("\n");
+  read_mpu9250();  //(a, g, m); //&intFlag_MPU9250,
+//  delay(100);
+//  Serial.print(a[0],3);
+//  Serial.print ("\t");
+//  Serial.print(x[0],6);
+//  Serial.print ("\t");
+//  Serial.print(t_last,3);
+//  Serial.print("\n");
 
 }
 
