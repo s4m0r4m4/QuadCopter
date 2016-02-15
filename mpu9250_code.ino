@@ -227,9 +227,6 @@ volatile float a[3], g[3], m[3]; // variables to hold latest sensor data values
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for Mahony method
 
-//int16_t accelCount[3];  // Stores the 16-bit signed accelerometer sensor output
-//int16_t gyroCount[3];   // Stores the 16-bit signed gyro sensor output
-//int16_t magCount[3];    // Stores the 16-bit signed magnetometer sensor output
 
 // #######################################################################################################
 void setup_mpu9250(int accel_range, int gyro_range, int mag_bits)
@@ -294,7 +291,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits)
     Serial.print("MPU9250 "); Serial.print("I AM "); Serial.print(c, HEX); Serial.print(" I should be "); Serial.println(0x71, HEX);
   }
   
-  if (c == 0x71) // WHO_AM_I should always be 0x68
+  if (c == 0x71) // WHO_AM_I should always be 0x71
   {
     if (SerialDebug){
       Serial.println("MPU9250 is online...");
@@ -409,30 +406,26 @@ void read_mpu9250()
       delt_t = millis() - count;
       if (delt_t > 500) { // update LCD once per half-second independent of read rate
     
-        Serial.print(a[0],3); Serial.print("\t");
-        Serial.print(a[1],3);  Serial.print("\t");
-        Serial.print(a[2],3);
+        Serial.print((int)1000*a[0]); Serial.print("\t");
+        Serial.print((int)1000*a[1]);  Serial.print("\t");
+        Serial.print((int)1000*a[2]);
         Serial.print("\n");
           
         if(SerialDebug) {
-          Serial.print(a[0],3); Serial.print("\t");
-          Serial.print(a[1],3);  Serial.print("\t");
-          Serial.print(a[2],3);
-          Serial.print("\n");
-//          Serial.print("ax = "); Serial.print(a[0]);  
-//          Serial.print(" ay = "); Serial.print(a[1]); 
-//          Serial.print(" az = "); Serial.print((a[2]); //Serial.println(" m/s^2");
-//          Serial.print("gx = "); Serial.print( g[0], 2); 
-//          Serial.print(" gy = "); Serial.print( g[1], 2); 
-//          Serial.print(" gz = "); Serial.print( g[2], 2); Serial.println(" deg/s");
-//          Serial.print("mx = "); Serial.print( (int)m[0] ); 
-//          Serial.print(" my = "); Serial.print( (int)m[1] ); 
-//          Serial.print(" mz = "); Serial.print( (int)m[2] ); Serial.println(" mG");
-//          
-//          Serial.print("q0 = "); Serial.print(q[0]);
-//          Serial.print(" qx = "); Serial.print(q[1]); 
-//          Serial.print(" qy = "); Serial.print(q[2]); 
-//          Serial.print(" qz = "); Serial.println(q[3]); 
+          Serial.print("ax = "); Serial.print((int)1000*a[0]);  
+          Serial.print(" ay = "); Serial.print((int)1000*a[1]); 
+          Serial.print(" az = "); Serial.print((int)1000*a[2]); Serial.println(" mm/s^2");
+          Serial.print("gx = "); Serial.print( g[0], 2); 
+          Serial.print(" gy = "); Serial.print( g[1], 2); 
+          Serial.print(" gz = "); Serial.print( g[2], 2); Serial.println(" deg/s");
+          Serial.print("mx = "); Serial.print( (int)m[0] ); 
+          Serial.print(" my = "); Serial.print( (int)m[1] ); 
+          Serial.print(" mz = "); Serial.print( (int)m[2] ); Serial.println(" mG");
+          
+          Serial.print("q0 = "); Serial.print(q[0]);
+          Serial.print(" qx = "); Serial.print(q[1]); 
+          Serial.print(" qy = "); Serial.print(q[2]); 
+          Serial.print(" qz = "); Serial.println(q[3]); 
       }               
       
     // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
@@ -601,7 +594,8 @@ void calibrateMPU9250(float * dest1, float * dest2)
   writeByte(MPU9250_ADDRESS, SMPLRT_DIV, 0x00);  // Set sample rate to 1 kHz
   writeByte(MPU9250_ADDRESS, GYRO_CONFIG, 0x00);  // Set gyro full-scale to 250 degrees per second, maximum sensitivity
   writeByte(MPU9250_ADDRESS, ACCEL_CONFIG, 0x00); // Set accelerometer full-scale to 2 g, maximum sensitivity
- 
+
+ // SAM!!
   uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
   uint16_t  accelsensitivity = 16384;  // = 16384 LSB/g
 
