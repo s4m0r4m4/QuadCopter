@@ -726,10 +726,7 @@ void readAccelData(volatile float *accel_vec) //
   tmp[1] = ((rawData[2] << 8) | rawData[3]) ;  
   tmp[2] = ((rawData[4] << 8) | rawData[5]) ;  
   
-  // Now we'll calculate the accleration value into actual m^2/s
-//  accel_vec[0] = (float)tmp[0]*accel_res - accelBias[0];  
-//  accel_vec[1] = (float)tmp[1]*accel_res - accelBias[1];   
-//  accel_vec[2] = (float)tmp[2]*accel_res - accelBias[2];    
+  // Now we'll calculate the accleration value into actual m^2/s  
   accel_vec[0] = ((float)tmp[0] - accelBias[0])*accel_res;  
   accel_vec[1] = ((float)tmp[1] - accelBias[1])*accel_res;   
   accel_vec[2] = ((float)tmp[2] - accelBias[2])*accel_res;    
