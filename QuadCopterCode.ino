@@ -15,8 +15,8 @@ volatile bool intFlag_MPU9250 = false;
 #define    ACC_FULL_SCALE_8_G        0x10
 #define    ACC_FULL_SCALE_16_G       0x18  //g's (9.81 m/s^2)
 
-int accel_range = 16;// ACC_FULL_SCALE_16_G;
-int gyro_range = 500; //GYRO_FULL_SCALE_500_DPS; 
+int accel_range = 2;// ACC_FULL_SCALE_16_G;
+int gyro_range = 2000; //GYRO_FULL_SCALE_500_DPS; 
 int mag_bits = 16; // FIXME
 
 // Timer

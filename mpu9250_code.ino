@@ -308,6 +308,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits)
     calibrateMPU9250(gyroBias, accelBias);// Calibrate gyro and accelerometers, load biases in bias registers
     
     initMPU9250();
+    
     if (SerialDebug){
       Serial.println("MPU9250 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
     }
@@ -406,9 +407,9 @@ void read_mpu9250()
       delt_t = millis() - count;
       if (delt_t > 500) { // update LCD once per half-second independent of read rate
     
-        Serial.print((int)1000*a[0]); Serial.print("\t");
-        Serial.print((int)1000*a[1]);  Serial.print("\t");
-        Serial.print((int)1000*a[2]);
+        Serial.print(a[0]); Serial.print("\t");
+        Serial.print(a[1]);  Serial.print("\t");
+        Serial.print(a[2]);
         Serial.print("\n");
           
         if(SerialDebug) {
@@ -595,7 +596,6 @@ void calibrateMPU9250(float * dest1, float * dest2)
   writeByte(MPU9250_ADDRESS, GYRO_CONFIG, 0x00);  // Set gyro full-scale to 250 degrees per second, maximum sensitivity
   writeByte(MPU9250_ADDRESS, ACCEL_CONFIG, 0x00); // Set accelerometer full-scale to 2 g, maximum sensitivity
 
- // SAM!!
   uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
   uint16_t  accelsensitivity = 16384;  // = 16384 LSB/g
 
@@ -718,9 +718,12 @@ void readAccelData(volatile float *accel_vec) //
   uint8_t rawData[6];  // x/y/z accel register data stored here
   int16_t tmp[3]; 
   readBytes(MPU9250_ADDRESS, ACCEL_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers into data array
-  tmp[0] = ((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a signed 16-bit value
-  tmp[1] = ((int16_t)rawData[2] << 8) | rawData[3] ;  
-  tmp[2] = ((int16_t)rawData[4] << 8) | rawData[5] ;  
+//  tmp[0] = (((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
+//  tmp[1] = (((int16_t)rawData[2] << 8) | rawData[3]) ;  
+//  tmp[2] = (((int16_t)rawData[4] << 8) | rawData[5]) ;  
+  tmp[0] = ((rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
+  tmp[1] = ((rawData[2] << 8) | rawData[3]) ;  
+  tmp[2] = ((rawData[4] << 8) | rawData[5]) ;  
   
   // Now we'll calculate the accleration value into actual g's
   accel_vec[0] = (float)tmp[0]*accel_res; // - accelBias[0];  // get actual g value, this depends on scale being set
