@@ -256,10 +256,10 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits)
 
   // Set the accelrometer range
   switch (accel_range)  {
-    case 16:   accel_command = 0x03;   accel_res = (16.0 * 9.81)/32768.0;   break; // accel_command = 0x18;
-    case 8:    accel_command = 0x02;   accel_res = (8.0 * 9.81)/32768.0;   break; // accel_command = 0x10;
-    case 4:    accel_command = 0x01;   accel_res = (4.0 * 9.81)/32768.0;   break; // accel_command = 0x08;
-    case 2:    accel_command = 0x00;   accel_res = (2.0 * 9.81)/32768.0;   break;
+    case 16:   accel_command = 0x03;   accel_res = (16.0)/32768.0;   break; // accel_command = 0x18;
+    case 8:    accel_command = 0x02;   accel_res = (8.0)/32768.0;   break; // accel_command = 0x10;
+    case 4:    accel_command = 0x01;   accel_res = (4.0)/32768.0;   break; // accel_command = 0x08;
+    case 2:    accel_command = 0x00;   accel_res = (2.0)/32768.0;   break;
     default:
       Serial.print("[ERROR]: Bad Accelerometer range command");
       Serial.println(accel_range);
@@ -682,7 +682,7 @@ void calibrateMPU9250(float * dest1, float * dest2)
     if((accel_bias_reg[ii] & mask)) mask_bit[ii] = 0x01; // If temperature compensation bit is set, record that fact in mask_bit
     Serial.print("\n Factory Accel Bias = "); Serial.print(accel_bias_reg[ii],DEC);
     Serial.print("\n NEW     Accel Bias = "); Serial.print(accel_bias[ii],DEC);
-  }
+  }Serial.print("\n ");
   
   // Construct total accelerometer bias, including calculated average accelerometer bias from above
   accel_bias_reg[0] -= (accel_bias[0]/8); // Subtract calculated averaged accelerometer bias scaled to 2048 LSB/g (16 g full scale)
@@ -702,15 +702,15 @@ void calibrateMPU9250(float * dest1, float * dest2)
 // Apparently this is not working for the acceleration biases in the MPU-9250 (SAM???)
 // Are we handling the temperature correction bit properly?
 // Push accelerometer biases to hardware registers
-  writeByte(MPU9250_ADDRESS, XA_OFFSET_H, data[0]);
-  writeByte(MPU9250_ADDRESS, XA_OFFSET_L, data[1]);
-  writeByte(MPU9250_ADDRESS, YA_OFFSET_H, data[2]);
-  writeByte(MPU9250_ADDRESS, YA_OFFSET_L, data[3]);
-  writeByte(MPU9250_ADDRESS, ZA_OFFSET_H, data[4]);
-  writeByte(MPU9250_ADDRESS, ZA_OFFSET_L, data[5]);
+//  writeByte(MPU9250_ADDRESS, XA_OFFSET_H, data[0]);
+//  writeByte(MPU9250_ADDRESS, XA_OFFSET_L, data[1]);
+//  writeByte(MPU9250_ADDRESS, YA_OFFSET_H, data[2]);
+//  writeByte(MPU9250_ADDRESS, YA_OFFSET_L, data[3]);
+//  writeByte(MPU9250_ADDRESS, ZA_OFFSET_H, data[4]);
+//  writeByte(MPU9250_ADDRESS, ZA_OFFSET_L, data[5]);
 
 // Output scaled accelerometer biases for display in the main program
-   dest2[0] = (float)accel_bias[0]/(float)accelsensitivity; 
+   dest2[0] = (float)accel_bias[0]/(float)accelsensitivity; // accelsensitivity is in LSB/g, so the bias is in g's
    dest2[1] = (float)accel_bias[1]/(float)accelsensitivity;
    dest2[2] = (float)accel_bias[2]/(float)accelsensitivity;
 }
@@ -722,14 +722,26 @@ void readAccelData(volatile float *accel_vec) //
   uint8_t rawData[6];  // x/y/z accel register data stored here
   int16_t tmp[3]; 
   readBytes(MPU9250_ADDRESS, ACCEL_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers into data array
-  tmp[0] = ((rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
-  tmp[1] = ((rawData[2] << 8) | rawData[3]) ;  
-  tmp[2] = ((rawData[4] << 8) | rawData[5]) ;  
+  tmp[0] = (int16_t)((int16_t)(rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
+  tmp[1] = (int16_t)((int16_t)(rawData[2] << 8) | rawData[3]) ;  
+  tmp[2] = (int16_t)((int16_t)(rawData[4] << 8) | rawData[5]) ;  
   
   // Now we'll calculate the accleration value into actual m^2/s  
-  accel_vec[0] = ((float)tmp[0] - accelBias[0])*accel_res;  
-  accel_vec[1] = ((float)tmp[1] - accelBias[1])*accel_res;   
-  accel_vec[2] = ((float)tmp[2] - accelBias[2])*accel_res;    
+//  accel_vec[0] = ((float)tmp[0] - accelBias[0]) * accel_res * 9.81f;  
+//  accel_vec[1] = ((float)tmp[1] - accelBias[1]) * accel_res * 9.81f;   
+//  accel_vec[2] = ((float)tmp[2] - accelBias[2]) * accel_res * 9.81f;
+    
+  accel_vec[0] = (((float)tmp[0]) * accel_res - accelBias[0]) * 9.81f;  
+  accel_vec[1] = (((float)tmp[1]) * accel_res - accelBias[1]) * 9.81f;   
+  accel_vec[2] = (((float)tmp[2]) * accel_res - accelBias[2]) * 9.81f;  
+//  accel_vec[0] = (((float)tmp[0]) * accel_res) * 9.81f;  
+//  accel_vec[1] = (((float)tmp[1]) * accel_res) * 9.81f;   
+//  accel_vec[2] = (((float)tmp[2]) * accel_res) * 9.81f;  
+
+ // Serial.print("\t tmp[0] = "); Serial.print((float)tmp[0],1);
+  //Serial.print("\t accel_res = "); Serial.print(accel_res,6);
+  //Serial.print("\t accelBias = "); Serial.print(accelBias[0],4);
+  //Serial.print("\n accelBias = "); Serial.print(accelBias[0]);
 }
 
 // ###############################################################################################       
@@ -739,9 +751,9 @@ void readGyroData(volatile float *gyro_vec)
   int16_t tmp[3];
    
   readBytes(MPU9250_ADDRESS, GYRO_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
-  tmp[0] = (rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a signed 16-bit value
-  tmp[1] = (rawData[2] << 8) | rawData[3] ;  
-  tmp[2] = (rawData[4] << 8) | rawData[5] ; 
+  tmp[0] = ((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a signed 16-bit value
+  tmp[1] = ((int16_t)rawData[2] << 8) | rawData[3] ;  
+  tmp[2] = ((int16_t)rawData[4] << 8) | rawData[5] ; 
   
   // Calculate the gyro value into actual degrees per second
   gyro_vec[0] = (float)tmp[0]*gyro_res;  // get actual gyro value, this depends on scale being set
