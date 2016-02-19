@@ -185,7 +185,7 @@
 #define SerialDebug false   // set to true to get Serial output for debugging
 
 // Specify sensor full scale
-uint8_t Mmode = 0x02;        // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
+uint8_t Mmode = 0x06;        // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
 float accel_res, gyro_res, mag_res;      // scale resolutions per LSB for the sensors
 uint8_t gyro_command, accel_command, mag_command;
   
@@ -273,9 +273,9 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits)
    // Possible magnetometer scales (and their register bit settings) are:
   // 14 bit resolution (0) and 16 bit resolution (1)
   switch (mag_bits)  {
-    case 14:    mag_res = 10.*4912./8190.0; // Proper scale to return milliGauss
+    case 14:    mag_res = 10.0*4912.0/8190.0; // Proper scale to return milliGauss
                 mag_command = 0x00;      break;
-    case 16:    mag_res = 10.*4912./32760.0; // Proper scale to return milliGauss
+    case 16:    mag_res = 10.0*4912.0/32760.0; // Proper scale to return milliGauss
                 mag_command = 0x01;      break;
   }
   
@@ -347,9 +347,14 @@ void read_mpu9250()
     
     readAccelData(a);  // Read the x/y/z adc values
    
-    readGyroData(g); //gyroCount);  // Read the x/y/z adc values
+    readGyroData(g); // Read the x/y/z adc values
   
-    readMagData(m); //magCount);  // Read the x/y/z adc values
+    readMagData(m);  // Read the x/y/z adc values
+    
+    Serial.print(m[0]); Serial.print("\t");
+    Serial.print(m[1]);  Serial.print("\t");
+    Serial.print(m[2]);
+    Serial.print("\n");
 
   }
   
@@ -367,8 +372,8 @@ void read_mpu9250()
   // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
   // This is ok by aircraft orientation standards!  
   // Pass gyro rate as rad/s
-//  MadgwickQuaternionUpdate(a[1], a[2], a[2], gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
-//  MahonyQuaternionUpdate(a[1], a[2], a[2], gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+//  MadgwickQuaternionUpdate(a[1], a[2], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  my,  mx, mz);
+//  MahonyQuaternionUpdate(a[1], a[2], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
 
 
     if (!AHRS) {
@@ -402,20 +407,20 @@ void read_mpu9250()
       }
     }
     else {
+//        Serial.print(m[0]); Serial.print("\t");
+//        Serial.print(m[1]);  Serial.print("\t");
+//        Serial.print(m[2]);
+//        Serial.print("\n");
         
       // Serial print and/or display at 0.5 s rate independent of data rates
       delt_t = millis() - count;
       if (delt_t > 500) { // update LCD once per half-second independent of read rate
     
-        Serial.print(a[0]); Serial.print("\t");
-        Serial.print(a[1]);  Serial.print("\t");
-        Serial.print(a[2]);
-        Serial.print("\n");
           
         if(SerialDebug) {
-          Serial.print("ax = "); Serial.print((int)1000*a[0]);  
-          Serial.print(" ay = "); Serial.print((int)1000*a[1]); 
-          Serial.print(" az = "); Serial.print((int)1000*a[2]); Serial.println(" mm/s^2");
+          Serial.print("ax = "); Serial.print((int)a[0]);  
+          Serial.print(" ay = "); Serial.print((int)a[1]); 
+          Serial.print(" az = "); Serial.print((int)a[2]); Serial.println(" m/s^2");
           Serial.print("gx = "); Serial.print( g[0], 2); 
           Serial.print(" gy = "); Serial.print( g[1], 2); 
           Serial.print(" gz = "); Serial.print( g[2], 2); Serial.println(" deg/s");
@@ -509,6 +514,7 @@ void initMPU9250()
   c = c & ~0x02; // Clear Fchoice bits [1:0] 
   c = c & ~0x18; // Clear AFS bits [4:3]
   c = c | gyro_command << 3; // Set full scale range for the gyro
+  uint8_t Fchoice = 0x00;
  // c =| 0x00; // Set Fchoice for the gyro to 11 by writing its inverse to bits 1:0 of GYRO_CONFIG
   writeByte(MPU9250_ADDRESS, GYRO_CONFIG, c ); // Write new GYRO_CONFIG value to register
   
@@ -556,7 +562,7 @@ void initAK8963(float * destination)
   writeByte(AK8963_ADDRESS, AK8963_CNTL, 0x00); // Power down magnetometer  
   delay(10);
   // Configure the magnetometer for continuous read and highest resolution
-  // set Mscale bit 4 to 1 (0) to enable 16 (14) bit resolution in CNTL register,
+  // set mag_command bit 4 to 1 (0) to enable 16 (14) bit resolution in CNTL register,
   // and enable continuous mode data acquisition Mmode (bits [3:0]), 0010 for 8 Hz and 0110 for 100 Hz sample rates
   writeByte(AK8963_ADDRESS, AK8963_CNTL, mag_command << 4 | Mmode); // Set magnetometer data resolution and sample ODR
   delay(10);
@@ -680,9 +686,9 @@ void calibrateMPU9250(float * dest1, float * dest2)
   
   for(ii = 0; ii < 3; ii++) {
     if((accel_bias_reg[ii] & mask)) mask_bit[ii] = 0x01; // If temperature compensation bit is set, record that fact in mask_bit
-    Serial.print("\n Factory Accel Bias = "); Serial.print(accel_bias_reg[ii],DEC);
-    Serial.print("\n NEW     Accel Bias = "); Serial.print(accel_bias[ii],DEC);
-  }Serial.print("\n ");
+//    Serial.print("\n Factory Accel Bias = "); Serial.print(accel_bias_reg[ii],DEC);
+//    Serial.print("\n NEW     Accel Bias = "); Serial.print(accel_bias[ii],DEC);
+  }//Serial.print("\n ");
   
   // Construct total accelerometer bias, including calculated average accelerometer bias from above
   accel_bias_reg[0] -= (accel_bias[0]/8); // Subtract calculated averaged accelerometer bias scaled to 2048 LSB/g (16 g full scale)
@@ -734,9 +740,6 @@ void readAccelData(volatile float *accel_vec) //
   accel_vec[0] = (((float)tmp[0]) * accel_res - accelBias[0]) * 9.81f;  
   accel_vec[1] = (((float)tmp[1]) * accel_res - accelBias[1]) * 9.81f;   
   accel_vec[2] = (((float)tmp[2]) * accel_res - accelBias[2]) * 9.81f;  
-//  accel_vec[0] = (((float)tmp[0]) * accel_res) * 9.81f;  
-//  accel_vec[1] = (((float)tmp[1]) * accel_res) * 9.81f;   
-//  accel_vec[2] = (((float)tmp[2]) * accel_res) * 9.81f;  
 
  // Serial.print("\t tmp[0] = "); Serial.print((float)tmp[0],1);
   //Serial.print("\t accel_res = "); Serial.print(accel_res,6);
@@ -777,9 +780,9 @@ void readMagData(volatile float *mag_vec) //int16_t * destination)
    }
   }
 
-  magbias[0] = +470.0;  // User environmental x-axis correction in milliGauss, should be automatically calculated
-  magbias[1] = +120.0;  // User environmental x-axis correction in milliGauss
-  magbias[2] = +125.0;  // User environmental x-axis correction in milliGauss
+//  magbias[0] = +470.0;  // User environmental x-axis correction in milliGauss, should be automatically calculated
+//  magbias[1] = +120.0;  // User environmental x-axis correction in milliGauss
+//  magbias[2] = +125.0;  // User environmental x-axis correction in milliGauss
   
   // Calculate the magnetometer values in milliGauss
   // Include factory calibration per data sheet and user environmental corrections
