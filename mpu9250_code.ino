@@ -201,7 +201,6 @@
 // Specify sensor full scale
 uint8_t Mmode = 0x06;        // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
 float accel_res, gyro_res, mag_res;      // scale resolutions per LSB for the sensors
-uint8_t gyro_command, accel_command, mag_command;
   
 // Pin definitions
 int intPin = 12;  // These can be changed, 2 and 3 are the Arduinos ext int pins
@@ -254,44 +253,50 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
   Serial.begin(115200);
   
   // Set the global variables for accel and gyro ranges
+  uint8_t gyro_range_cmd;
   switch (gyro_range)  {
-    case 2000:   gyro_command = 0x03;   gyro_res = 2000.0/32768.0;   break; // gyro_command = 0x18;
-    case 1000:   gyro_command = 0x02;   gyro_res = 1000.0/32768.0;   break; // gyro_command = 0x10;
-    case 500:    gyro_command = 0x01;   gyro_res = 500.0/32768.0;   break; // gyro_command = 0x08;
-    case 250:    gyro_command = 0x00;   gyro_res = 250.0/32768.0;   break;
+    case 2000:   gyro_range_cmd = 0x03;   gyro_res = 2000.0/32768.0;   break; // gyro_range_cmd = 0x18;
+    case 1000:   gyro_range_cmd = 0x02;   gyro_res = 1000.0/32768.0;   break; // gyro_range_cmd = 0x10;
+    case 500:    gyro_range_cmd = 0x01;   gyro_res = 500.0/32768.0;   break; // gyro_range_cmd = 0x08;
+    case 250:    gyro_range_cmd = 0x00;   gyro_res = 250.0/32768.0;   break;
     default:
       Serial.print("[ERROR]: Bad Gyro range command: ");
       Serial.println(gyro_range);
   }    
   if (verbose) {
     Serial.print("[Setup] Setting Gryo command:");
-    sprintf(dummy_str, " %x (hex) =  %d (dec) \n", gyro_command, gyro_command);
+    sprintf(dummy_str, " %x (hex) =  %d (dec) \n", gyro_range_cmd, gyro_range_cmd);
     Serial.print(dummy_str);
   }
 
   // Set the accelrometer range
+  uint8_t accel_range_cmd;
   switch (accel_range)  {
-    case 16:   accel_command = 0x03;   accel_res = (16.0)/32768.0;   break; // accel_command = 0x18;
-    case 8:    accel_command = 0x02;   accel_res = (8.0)/32768.0;   break; // accel_command = 0x10;
-    case 4:    accel_command = 0x01;   accel_res = (4.0)/32768.0;   break; // accel_command = 0x08;
-    case 2:    accel_command = 0x00;   accel_res = (2.0)/32768.0;   break;
+    case 16:   accel_range_cmd = 0x03;   accel_res = (16.0)/32768.0;   break; // accel_range = 0x18;
+    case 8:    accel_range_cmd = 0x02;   accel_res = (8.0)/32768.0;   break; // accel_range = 0x10;
+    case 4:    accel_range_cmd = 0x01;   accel_res = (4.0)/32768.0;   break; // accel_range = 0x08;
+    case 2:    accel_range_cmd = 0x00;   accel_res = (2.0)/32768.0;   break;
     default:
       Serial.print("[ERROR]: Bad Accelerometer range command");
-      Serial.println(accel_range);
+      Serial.println(accel_range_cmd);
   }
   if (verbose) {
     Serial.print("[Setup] Setting Accelerometer command:");
-    sprintf(dummy_str, " %x (hex) =  %d (dec) \n", accel_command, accel_command);
+    sprintf(dummy_str, " %x (hex) =  %d (dec) \n", accel_range_cmd, accel_range_cmd);
     Serial.print(dummy_str);
   }
 
    // Possible magnetometer scales (and their register bit settings) are:
   // 14 bit resolution (0) and 16 bit resolution (1)
+  uint8_t mag_resolution_cmd;
   switch (mag_bits)  {
     case 14:    mag_res = 10.0*4912.0/8190.0; // Proper scale to return milliGauss
-                mag_command = 0x00;      break;
+                mag_resolution_cmd = 0x00;      break;
     case 16:    mag_res = 10.0*4912.0/32760.0; // Proper scale to return milliGauss
-                mag_command = 0x01;      break;
+                mag_resolution_cmd = 0x01;      break;
+    default:
+      Serial.println("[ERROR] Bad Mag Resolution command");
+      Serial.println(mag_bits);
   }
   
   // Set up the interrupt pin, its set as active high, push-pull
@@ -321,7 +326,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
     calibrateMPU9250(gyroBias, accelBias);// Calibrate gyro and accelerometers, load biases in bias registers
 //    Serial.print("GYRO BIASES: "); Serial.print(gyroBias[0]); Serial.print("\t"); Serial.print(gyroBias[1]); Serial.print("\t"); Serial.print(gyroBias[2]); Serial.print("\n");
 
-    initMPU9250(gyro_dlpf, accel_dlpf);
+    initMPU9250(gyro_range_cmd, accel_range_cmd, gyro_dlpf, accel_dlpf);
     
     if (SerialDebug){
       Serial.println("MPU9250 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
@@ -332,7 +337,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
       Serial.print("AK8963 "); Serial.print("I AM "); Serial.print(d, HEX); Serial.print(" I should be "); Serial.println(0x48, HEX);
     }
     // Get magnetometer calibration from AK8963 ROM
-    initAK8963(magCalibration);     
+    initAK8963(magCalibration, mag_resolution_cmd);     
     if (SerialDebug){
       Serial.println("AK8963 initialized for active data mode...."); // Initialize device for active mode read of magnetometer
     }
@@ -361,9 +366,9 @@ void read_mpu9250()
     readAccelData(a);  // Read the x/y/z adc values   
     readGyroData(g); // Read the x/y/z adc values  
     
-    Serial.print(g[0]); Serial.print("\t");
-    Serial.print(g[1]); Serial.print("\t");
-    Serial.print(g[2]); Serial.print("\t");
+    Serial.print(a[0]); Serial.print("\t");
+    Serial.print(a[1]); Serial.print("\t");
+    Serial.print(a[2]); Serial.print("\t");
 //    Serial.print(1000000.0/((float)(micros()-t_last)),1); Serial.print("\t");
 //    t_last = micros(); 
     Serial.print("\n");  
@@ -495,7 +500,7 @@ void read_mpu9250()
 
 
 // ###############################################################################################       
-void initMPU9250(int gyro_dlpf, int accel_dlpf)
+void initMPU9250(int gyro_range_cmd, int accel_range_cmd, int gyro_dlpf, int accel_dlpf)
 {  
  // wake up device
   writeByte(MPU9250_ADDRESS, PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors 
@@ -523,17 +528,19 @@ void initMPU9250(int gyro_dlpf, int accel_dlpf)
       writeByte(MPU9250_ADDRESS, CONFIG, GYRO_DLPF_CFG_41HZ); 
       break; 
   }
+  uint8_t accel_bandwidth_cmd;
   switch (accel_dlpf){
-    case 0: writeByte(MPU9250_ADDRESS, CONFIG, A_DLPF_CFG_460Hz); break; //doesn't matter, because we're going to disable DLPF
-    case 41: writeByte(MPU9250_ADDRESS, CONFIG, A_DLPF_CFG_41Hz); break; 
-    case 92: writeByte(MPU9250_ADDRESS, CONFIG, A_DLPF_CFG_92Hz); break; 
-    case 184: writeByte(MPU9250_ADDRESS, CONFIG, A_DLPF_CFG_184Hz); break; 
-    case 460: writeByte(MPU9250_ADDRESS, CONFIG,  A_DLPF_CFG_460Hz); break; 
+    case 0: accel_bandwidth_cmd = A_DLPF_CFG_460Hz; break; //doesn't matter, because we're going to disable DLPF
+    case 41: accel_bandwidth_cmd = A_DLPF_CFG_41Hz; break; 
+    case 92: accel_bandwidth_cmd = A_DLPF_CFG_92Hz; break; 
+    case 184: accel_bandwidth_cmd = A_DLPF_CFG_184Hz; break; 
+    case 460: accel_bandwidth_cmd =  A_DLPF_CFG_460Hz; break; 
     default:
       Serial.println("Accel DLPF command not recognized! Using 41 Hz...");
-      writeByte(MPU9250_ADDRESS, CONFIG, A_DLPF_CFG_41Hz); 
+      accel_bandwidth_cmd = A_DLPF_CFG_41Hz;
       break;     
   }
+  
 
  // The accelerometer, gyro, and thermometer are set to 1 kHz sample rates, 
  // but all these rates are further reduced by a factor of 5 to 200 Hz because of the SMPLRT_DIV setting
@@ -546,20 +553,19 @@ void initMPU9250(int gyro_dlpf, int accel_dlpf)
 //  c = c & ~0xE0; // Clear self-test bits [7:5] 
   c = c & ~0x02; // Clear Fchoice bits [1:0] 
   c = c & ~0x18; // Clear AFS bits [4:3]
-  c = c | gyro_command << 3; // Set gyro range
+  c = c | gyro_range_cmd << 3; // Set gyro range
   if (gyro_dlpf!=0){ // if we want to enable the gryo Digital Low-Pass Filter
     c = c & ~0x03; // Set Fchoice for the gyro to 11 by writing its inverse to bits 1:0 of GYRO_CONFIG
   } else {
     c = c | 0x03; // Set Fchoice for the gyro to 00 by writing its inverse to bits 1:0 of GYRO_CONFIG
   }
-//  c = c | ~GYRO_FCHOICE; 
   writeByte(MPU9250_ADDRESS, GYRO_CONFIG, c ); // Write new GYRO_CONFIG value to register
   
  // Set accelerometer full-scale range configuration
   c = readByte(MPU9250_ADDRESS, ACCEL_CONFIG); // get current ACCEL_CONFIG register value
   c = c & ~0xE0; // Clear self-test bits [7:5] 
   c = c & ~0x18;  // Clear AFS bits [4:3]
-  c = c | accel_command << 3; // Set full scale range for the accelerometer 
+  c = c | accel_range_cmd << 3; // Setthe range for the accelerometer 
   writeByte(MPU9250_ADDRESS, ACCEL_CONFIG, c); // Write new ACCEL_CONFIG register value
 
  // Set accelerometer sample rate configuration
@@ -567,8 +573,13 @@ void initMPU9250(int gyro_dlpf, int accel_dlpf)
  // accel_fchoice_b bit [3]; in this case the bandwidth is 1.13 kHz
   c = readByte(MPU9250_ADDRESS, ACCEL_CONFIG2); // get current ACCEL_CONFIG2 register value
 //  c = c & ~0x0F; // Clear accel_fchoice_b (bit 3) and A_DLPFG (bits [2:0])  
-  c = c & ~ACCEL_FCHOICE << 3;
-  c = c | A_DLPF_CFG_41Hz; //0x03;  // Set accelerometer rate to 1 kHz and bandwidth to (X) Hz
+  if (accel_dlpf!=0){
+    c = c & ~0x00 << 3; // enable the accel digital low-pass filter
+  } else {
+    c = c | ~0x01 << 3; // disable the accel digital low-pass filter
+  }
+//  c = c & ~ACCEL_FCHOICE << 3;
+  c = c | accel_bandwidth_cmd; // Set accelerometer rate to 1 kHz and bandwidth to (X) Hz
   writeByte(MPU9250_ADDRESS, ACCEL_CONFIG2, c); // Write new ACCEL_CONFIG2 register value
 
   
@@ -588,7 +599,7 @@ void initMPU9250(int gyro_dlpf, int accel_dlpf)
 
 // ###############################################################################################   
 // Initialize the magnetometer     
-void initAK8963(float * destination)
+void initAK8963(float * destination, uint8_t mag_resolution_cmd)
 {
   // First extract the factory calibration for each magnetometer axis
   uint8_t rawData[3];  // x/y/z gyro calibration data stored here
@@ -603,9 +614,9 @@ void initAK8963(float * destination)
   writeByte(AK8963_ADDRESS, AK8963_CNTL, 0x00); // Power down magnetometer  
   delay(10);
   // Configure the magnetometer for continuous read and highest resolution
-  // set mag_command bit 4 to 1 (0) to enable 16 (14) bit resolution in CNTL register,
+  // set mag_resolution_cmd bit 4 to 1 (0) to enable 16 (14) bit resolution in CNTL register,
   // and enable continuous mode data acquisition Mmode (bits [3:0]), 0010 for 8 Hz and 0110 for 100 Hz sample rates
-  writeByte(AK8963_ADDRESS, AK8963_CNTL, mag_command << 4 | Mmode); // Set magnetometer data resolution and sample ODR
+  writeByte(AK8963_ADDRESS, AK8963_CNTL, mag_resolution_cmd << 4 | Mmode); // Set magnetometer data resolution and sample ODR
   delay(10);
 }
 
