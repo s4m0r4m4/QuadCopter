@@ -6,11 +6,13 @@
 volatile bool intFlag_MPU9250 = false;
 
 int accel_range = 16;// ACC_FULL_SCALE_16_G;
-int gyro_range = 2000; //GYRO_FULL_SCALE_500_DPS; 
-int mag_bits = 16; // FIXME
+int gyro_range = 500; //GYRO_FULL_SCALE_500_DPS; 
+int mag_bits = 16;
+int gyro_dlpf = 41; // 0, 41, 92, 184, 250
+int accel_dlpf = 41; // 0, 41, 92, 184, 460
 
 // Timer
-volatile float t_last;
+//volatile float t_last;
 const float update_state_deltaT = 1000000;
 // 6 DOF State
 volatile float x[6];
@@ -23,14 +25,14 @@ void setup() {
 //  }
 
   // Set up the MPU 9250 IMU board
-  setup_mpu9250(accel_range, gyro_range, mag_bits);
+  setup_mpu9250(accel_range, gyro_range, mag_bits, gyro_dlpf, accel_dlpf);
   
 //  pinMode(13, OUTPUT);
   Timer1.initialize(update_state_deltaT);         // initialize timer1, and set a 1/2 second period
 //  Timer1.attachInterrupt(callback_UpdateState);  // attaches callback() as a timer overflow interrupt
   
   // Start the initial time
-  t_last = millis()/1000.0f;
+//  t_last = millis()/1000.0f;
 }
 
 // #######################################################################
