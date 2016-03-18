@@ -6,8 +6,22 @@
 // device orientation -- which can be converted to yaw, pitch, and roll. Useful for stabilizing quadcopters, etc.
 // The performance of the orientation filter is at least as good as conventional Kalman-based filtering algorithms
 // but is much less computationally intensive---it can be performed on a 3.3 V Pro Mini operating at 8 MHz!
-void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
+//void MadgwickQuaternionUpdate(float *a, float gx, float gy, float gz, float *m)
+void MadgwickQuaternionUpdate(float *a, float *g, float *m)
 {
+    float ax = a[0]/9.81f; // TODO - remove 9.81???
+    float ay = a[1]/9.81f;
+    float az = a[2]/9.81f;
+
+    float gx = g[0]
+    float gy = 
+    float gz = 
+
+    float mx = m[0];
+    float my = m[1]; 
+    float mz = m[2];
+
+    
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
     float norm;
     float hx, hy, _2bx, _2bz;
