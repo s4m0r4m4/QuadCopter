@@ -25,9 +25,6 @@
  We have disabled the internal pull-ups used by the Wire library in the Wire.h/twi.c utility file.
  We are also using the 400 kHz fast I2C mode by setting the TWI_FREQ  to 400000L /twi.h utility file.
  */
-//#include <SPI.h>
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_PCD8544.h>
 #include <Wire.h>   
 
 // See also MPU-9250 Register Map and Descriptions, Revision 4.0, RM-MPU-9250A-00, Rev. 1.4, 9/9/2013 for registers not listed in 
@@ -372,13 +369,6 @@ void read_mpu9250()
 //    Serial.print(m[0]); Serial.print("\t");  Serial.print(m[1]);  Serial.print("\t");  Serial.print(m[2]); Serial.print("\n");
   }
   
-//  Now = micros();
-//  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-//  lastUpdate = Now;
-//  
-//  sum += deltat; // sum for averaging filter update rate
-//  sumCount++;
-  
   // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
   // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
   // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
@@ -386,72 +376,24 @@ void read_mpu9250()
   // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
   // This is ok by aircraft orientation standards!  
   // Pass gyro rate as rad/s
-  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
-  MadgwickQuaternionUpdate(a, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m);
+//  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
+  MadgwickQuaternionUpdate(a, g, m);
 //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
 
 
-    adjustAccelData(a);
+//    adjustAccelData(a, q);
     
-//    Serial.print(m[0]); Serial.print("\t");
-//    Serial.print(m[1]); Serial.print("\t");
-//    Serial.print(m[2]); Serial.print("\t");
+//      serialPrintArray(q);
+    
+      Now = micros();
+      deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+      lastUpdate = Now;
+    
+      sum += deltat; // sum for averaging filter update rate
+      sumCount++;
 //    Serial.print(1000000.0/((float)(micros()-t_last)),1); Serial.print("\t");
 //    t_last = micros(); 
-//    Serial.print("\n");  
-
-//    if (!AHRS) {
-//    delt_t = millis() - count;
-//      if(delt_t > 500) {
-//    
-//        if(SerialDebug) {
-//          // Print acceleration values in milligs!
-//          Serial.print("X-acceleration: "); Serial.print(a[0]); Serial.print(" mg ");
-//          Serial.print("Y-acceleration: "); Serial.print(a[1]); Serial.print(" mg ");
-//          Serial.print("Z-acceleration: "); Serial.print(a[2]); Serial.println(" mg ");
-//       
-//          // Print gyro values in degree/sec
-//          Serial.print("X-gyro rate: "); Serial.print(g[0], 3); Serial.print(" degrees/sec "); 
-//          Serial.print("Y-gyro rate: "); Serial.print(g[1], 3); Serial.print(" degrees/sec "); 
-//          Serial.print("Z-gyro rate: "); Serial.print(g[2], 3); Serial.println(" degrees/sec"); 
-//          
-//          // Print mag values in degree/sec
-//          Serial.print("X-mag field: "); Serial.print(m[0]); Serial.print(" mG "); 
-//          Serial.print("Y-mag field: "); Serial.print(m[1]); Serial.print(" mG "); 
-//          Serial.print("Z-mag field: "); Serial.print(m[2]); Serial.println(" mG"); 
-//       
-//          tempCount = readTempData();  // Read the adc values
-//          temperature = ((float) tempCount) / 333.87 + 21.0; // Temperature in degrees Centigrade
-//         // Print temperature in degrees Centigrade      
-//          Serial.print("Temperature is ");  Serial.print(temperature, 1);  Serial.println(" degrees C"); // Print T values to tenths of s degree C
-//        }
-//        
-//        count = millis();
-//    //    digitalWrite(myLed, !digitalRead(myLed));  // toggle led
-//      }
-//    }
-//    else {
-//          
-//        if(SerialDebug) {
-//          Serial.print(a[0]);  Serial.print("\t");
-//          Serial.print(a[1]); Serial.print("\t");
-//          Serial.print(a[2]); Serial.print("\t"); //Serial.println(" m/s^2");
-////          Serial.print("gx = "); 
-//
-//          Serial.print( g[0], 2); Serial.print("\t");
-//          Serial.print( g[1], 2); Serial.print("\t");
-//          Serial.print( g[2], 2); Serial.print("\t");//Serial.println(" deg/s");
-//
-//          Serial.print(m[0] ); Serial.print("\t");
-//          Serial.print(m[1] ); Serial.print("\t");
-//          Serial.print(m[2] ); Serial.print("\t"); //Serial.println(" mG");
-//
-//          Serial.print(0); Serial.print("\t");
-//          Serial.print(q[0]);Serial.print("\t");
-//          Serial.print(q[1]); Serial.print("\t");
-//          Serial.print(q[2]); Serial.print("\t");
-//          Serial.println(q[3]); Serial.print("\t");
-//      }               
+//    Serial.print("\n");           
       
     // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
     // In this coordinate system, the positive z-axis is down toward Earth. 
@@ -471,12 +413,11 @@ void read_mpu9250()
 //      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
       roll  *= 180.0f / PI;
 
-//      if(SerialDebug) {
-        Serial.print(yaw, 2);  Serial.print("\t ");
-        Serial.print(pitch, 2);  Serial.print("\t ");
-        Serial.println(roll, 2);    
-//        Serial.print("rate = "); Serial.print((float)sumCount/sum, 2); Serial.println(" Hz");
-//      }
+
+//        Serial.print(yaw, 2);  Serial.print("\t ");
+//        Serial.print(pitch, 2);  Serial.print("\t ");
+//        Serial.println(roll, 2);   
+
     
       // With these settings the filter is updating at a ~145 Hz rate using the Madgwick scheme and 
       // >200 Hz using the Mahony scheme even though the display refreshes at only 2 Hz.
@@ -494,7 +435,7 @@ void read_mpu9250()
 //      sumCount = 0;
 //      sum = 0;    
 //    }
-  }
+//  }
 
 }
 
@@ -770,139 +711,6 @@ void calibrateMPU9250(float * dest1, float * dest2)
    dest2[0] = (float)accel_bias[0]/(float)accelsensitivity; // accelsensitivity is in LSB/g, so the bias is in g's
    dest2[1] = (float)accel_bias[1]/(float)accelsensitivity;
    dest2[2] = (float)accel_bias[2]/(float)accelsensitivity;
-}
-
-
-// ###############################################################################################       
-void readAccelData(volatile float *accel_vec) //
-{
-  uint8_t rawData[6];  // x/y/z accel register data stored here
-  int16_t tmp[3]; 
-  readBytes(MPU9250_ADDRESS, ACCEL_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers into data array
-  tmp[0] = (int16_t)((int16_t)(rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
-  tmp[1] = (int16_t)((int16_t)(rawData[2] << 8) | rawData[3]) ;  
-  tmp[2] = (int16_t)((int16_t)(rawData[4] << 8) | rawData[5]) ;  
-  
-  // Now we'll calculate the accleration value into actual m^2/s  
-//  accel_vec[0] = ((float)tmp[0] - accelBias[0]) * accel_res * 9.81f;  
-//  accel_vec[1] = ((float)tmp[1] - accelBias[1]) * accel_res * 9.81f;   
-//  accel_vec[2] = ((float)tmp[2] - accelBias[2]) * accel_res * 9.81f;
-    
-  accel_vec[0] = (((float)tmp[0]) * accel_res - accelBias[0]) * 9.81f;  
-  accel_vec[1] = (((float)tmp[1]) * accel_res - accelBias[1]) * 9.81f;   
-  accel_vec[2] = (((float)tmp[2]) * accel_res - accelBias[2]) * 9.81f;  
-
- // Serial.print("\t tmp[0] = "); Serial.print((float)tmp[0],1);
-  //Serial.print("\t accel_res = "); Serial.print(accel_res,6);
-  //Serial.print("\t accelBias = "); Serial.print(accelBias[0],4);
-  //Serial.print("\n accelBias = "); Serial.print(accelBias[0]);
-}
-
-// ###############################################################################################     
-void adjustAccelData(volatile float *accel_vec, volatile float  *q){
-  // Auxiliary variables to avoid repeated arithmetic
-  float q1q1 = q[1] * q[1];
-  float q1q2 = q[1] * q[2];
-  float q1q3 = q[1] * q[3];
-  float q1q4 = q[1] * q[4];
-  float q2q2 = q[2] * q[2];
-  float q2q3 = q[2] * q[3];
-  float q2q4 = q[2] * q[4];
-  float q3q3 = q[3] * q[3];
-  float q3q4 = q[3] * q[4];
-  float q4q4 = q[4] * q[4];  
-    
-  float Q_ab[3][3] = [[q1q1-q2q2-q3q3+q4q4, 2*(q1q2+q3q4), 2*(q1q3-q2q4)],
-                      [2*(q1q2-q3q4), -q1q1+q2q2-q3q3+q4q4, 2*(q2q3+q1q4)],
-                      [2*(q1q3+q2q4), 2*(q2q3-q1q4), -q1q1-q2q2+q3q3+q4q4]];
-  
-}
-// ###############################################################################################       
-void readGyroData(volatile float *gyro_vec)
-{
-  uint8_t rawData[6];  // x/y/z gyro register data stored here
-  int16_t tmp[3];
-   
-  readBytes(MPU9250_ADDRESS, GYRO_XOUT_H, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
-  tmp[0] = (int16_t)((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a signed 16-bit value
-  tmp[1] = (int16_t)((int16_t)rawData[2] << 8) | rawData[3] ;  
-  tmp[2] = (int16_t)((int16_t)rawData[4] << 8) | rawData[5] ; 
-  
-  // Calculate the gyro value into actual degrees per second
-  gyro_vec[0] = (float)tmp[0]*gyro_res;  // get actual gyro value, this depends on scale being set
-  gyro_vec[1] = (float)tmp[1]*gyro_res;  
-  gyro_vec[2] = (float)tmp[2]*gyro_res;   
-}
-
-// ###############################################################################################       
-void readMagData(volatile float *mag_vec) //int16_t * destination)
-{
-  uint8_t rawData[7];  // x/y/z gyro register data, ST2 register stored here, must read ST2 at end of data acquisition
-  int16_t tmp[3]; 
-  
-  if(readByte(AK8963_ADDRESS, AK8963_ST1) & 0x01) { // wait for magnetometer data ready bit to be set
-  readBytes(AK8963_ADDRESS, AK8963_XOUT_L, 7, &rawData[0]);  // Read the six raw data and ST2 registers sequentially into data array
-  uint8_t c = rawData[6]; // End data read by reading ST2 register
-    if(!(c & 0x08)) { // Check if magnetic sensor overflow set, if not then report data
-    tmp[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;  // Turn the MSB and LSB into a signed 16-bit value
-    tmp[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;  // Data stored as little Endian
-    tmp[2] = ((int16_t)rawData[5] << 8) | rawData[4] ; 
-   }
-  }
-
-  magbias[0] = +609.360; //+666.715; //+470.0;  // User environmental x-axis correction in milliGauss, should be automatically calculated
-  magbias[1] = +447.380; //+452.795; //+120.0;  // User environmental x-axis correction in milliGauss
-  magbias[2] = -400.095; //-412.265; //+125.0;  // User environmental x-axis correction in milliGauss
-  
-  // Calculate the magnetometer values in milliGauss
-  // Include factory calibration per data sheet and user environmental corrections
-  m[0] = (float)tmp[0]*mag_res*magCalibration[0] - magbias[0];  // get actual magnetometer value, this depends on scale being set
-  m[1] = (float)tmp[1]*mag_res*magCalibration[1] - magbias[1];  
-  m[2] = (float)tmp[2]*mag_res*magCalibration[2] - magbias[2];   
-}
-
-// ###############################################################################################       
-int16_t readTempData()
-{
-  uint8_t rawData[2];  // x/y/z gyro register data stored here
-  readBytes(MPU9250_ADDRESS, TEMP_OUT_H, 2, &rawData[0]);  // Read the two raw data registers sequentially into data array 
-  return ((int16_t)rawData[0] << 8) | rawData[1] ;  // Turn the MSB and LSB into a 16-bit value
-}
-
-// ###############################################################################################       
-// Wire.h read and write protocols
-void writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
-{
-	Wire.beginTransmission(address);  // Initialize the Tx buffer
-	Wire.write(subAddress);           // Put slave register address in Tx buffer
-	Wire.write(data);                 // Put data in Tx buffer
-	Wire.endTransmission();           // Send the Tx buffer
-}
-
-// ###############################################################################################       
-// Wire.h read and write protocols
-uint8_t readByte(uint8_t address, uint8_t subAddress)
-{
-	uint8_t data; // `data` will store the register data	 
-	Wire.beginTransmission(address);         // Initialize the Tx buffer
-	Wire.write(subAddress);	                 // Put slave register address in Tx buffer
-	Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
-	Wire.requestFrom(address, (uint8_t) 1);  // Read one byte from slave register address 
-	data = Wire.read();                      // Fill Rx buffer with result
-	return data;                             // Return data read from slave register
-}
-
-// ###############################################################################################       
-// Wire.h read and write protocols
-void readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t * dest)
-{  
-	Wire.beginTransmission(address);   // Initialize the Tx buffer
-	Wire.write(subAddress);            // Put slave register address in Tx buffer
-	Wire.endTransmission(false);       // Send the Tx buffer, but send a restart to keep connection alive
-	uint8_t i = 0;
-        Wire.requestFrom(address, count);  // Read bytes from slave register address 
-	while (Wire.available()) {
-        dest[i++] = Wire.read(); }         // Put read results in the Rx buffer
 }
 
 // ###############################################################################################
