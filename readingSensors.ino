@@ -1,14 +1,14 @@
 
 #include <Wire.h>   
 
-void serialPrintArray(volatile float *vec){
+void serialPrintArray(float *vec){
   Serial.print(vec[0]); Serial.print("\t");
   Serial.print(vec[1]); Serial.print("\t");
   Serial.print(vec[2]); Serial.print("\n");
 }
 
 // ###############################################################################################       
-void readAccelData(volatile float *accel_vec) //
+void readAccelData(float *accel_vec) //
 {
   uint8_t rawData[6];  // x/y/z accel register data stored here
   int16_t tmp[3]; 
@@ -24,7 +24,7 @@ void readAccelData(volatile float *accel_vec) //
 }
 
 // ###############################################################################################     
-void adjustAccelData(volatile float *accel_vec, volatile float  *q){
+void adjustAccelData(float *accel_vec, float  *q){
   // Auxiliary variables to avoid repeated arithmetic
   float q1q1 = q[1] * q[1];
   float q1q2 = q[1] * q[2];
@@ -35,15 +35,30 @@ void adjustAccelData(volatile float *accel_vec, volatile float  *q){
   float q2q4 = q[2] * q[4];
   float q3q3 = q[3] * q[3];
   float q3q4 = q[3] * q[4];
-  float q4q4 = q[4] * q[4];  
+  float q4q4 = q[4] * q[4];
     
-  float Q_ab[3][3] = {{q1q1-q2q2-q3q3+q4q4, 2*(q1q2+q3q4), 2*(q1q3-q2q4)},
-                      {2*(q1q2-q3q4), -q1q1+q2q2-q3q3+q4q4, 2*(q2q3+q1q4)},
-                      {2*(q1q3+q2q4), 2*(q2q3-q1q4), -q1q1-q2q2+q3q3+q4q4}};
+//  float Q_ab[3][3] = {{q1q1-q2q2-q3q3+q4q4, 2*(q1q2+q3q4), 2*(q1q3-q2q4)},
+//                      {2*(q1q2-q3q4), -q1q1+q2q2-q3q3+q4q4, 2*(q2q3+q1q4)},
+//                      {2*(q1q3+q2q4), 2*(q2q3-q1q4), -q1q1-q2q2+q3q3+q4q4}};
+                 
+  float Q_ab[3] = {2*(q1q3-q2q4), 2*(q2q3+q1q4), -q1q1-q2q2+q3q3+q4q4};
+  
+  Serial.print(sqrt(Q_ab[0]*Q_ab[0] +Q_ab[1]*Q_ab[1] +Q_ab[2]*Q_ab[2]));
+  Serial.print("\t");
+  
+  float new_accel_vec[3];
+  float new_g[3];
+  for (int i=0;i<3;i++){
+    new_g[i] = Q_ab[i]*-9.81; //matrix multiplication, simplified for a single-valued g-vector of constant value
+    new_accel_vec[i] = accel_vec[i] + new_g[i];
+  }
+//  serialPrintArray(accel_vec);
+  serialPrintArray(new_g);
+//  serialPrintArray(new_accel_vec);  
   
 }
 // ###############################################################################################       
-void readGyroData(volatile float *gyro_vec)
+void readGyroData(float *gyro_vec)
 {
   uint8_t rawData[6];  // x/y/z gyro register data stored here
   int16_t tmp[3];
@@ -60,7 +75,7 @@ void readGyroData(volatile float *gyro_vec)
 }
 
 // ###############################################################################################       
-void readMagData(volatile float *mag_vec) //int16_t * destination)
+void readMagData(float *mag_vec) //int16_t * destination)
 {
   uint8_t rawData[7];  // x/y/z gyro register data, ST2 register stored here, must read ST2 at end of data acquisition
   int16_t tmp[3]; 

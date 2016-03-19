@@ -24,9 +24,7 @@
  Because the sensor is not 5V tolerant, we are using a 3.3 V 8 MHz Pro Mini or a 3.3 V Teensy 3.1.
  We have disabled the internal pull-ups used by the Wire library in the Wire.h/twi.c utility file.
  We are also using the 400 kHz fast I2C mode by setting the TWI_FREQ  to 400000L /twi.h utility file.
- */
-#include <Wire.h>   
-
+ */ 
 // See also MPU-9250 Register Map and Descriptions, Revision 4.0, RM-MPU-9250A-00, Rev. 1.4, 9/9/2013 for registers not listed in 
 // above document; the MPU9250 and MPU9150 are virtually identical but the latter has a different register map
 //
@@ -35,12 +33,12 @@
 #define WHO_AM_I_AK8963  0x00 // should return 0x48
 #define INFO             0x01
 #define AK8963_ST1       0x02  // data ready status bit 0
-#define AK8963_XOUT_L	 0x03  // data
-#define AK8963_XOUT_H	 0x04
-#define AK8963_YOUT_L	 0x05
-#define AK8963_YOUT_H	 0x06
-#define AK8963_ZOUT_L	 0x07
-#define AK8963_ZOUT_H	 0x08
+#define AK8963_XOUT_L   0x03  // data
+#define AK8963_XOUT_H  0x04
+#define AK8963_YOUT_L  0x05
+#define AK8963_YOUT_H  0x06
+#define AK8963_ZOUT_L  0x07
+#define AK8963_ZOUT_H  0x08
 #define AK8963_ST2       0x09  // Data overflow bit 3 and data read error status bit 2
 #define AK8963_CNTL      0x0A  // Power down (0000), single-measurement (0001), self-test (1000) and Fuse ROM (1111) modes on bits 3:0
 #define AK8963_ASTC      0x0C  // Self test control
@@ -190,6 +188,7 @@
 #define GYRO_DLPF_CFG_92HZ  0x02
 #define GYRO_DLPF_CFG_41HZ  0x03
 
+
 // -------------------------------------------------------------------------------------------------
 
 #define AHRS true         // set to false for basic data read
@@ -198,11 +197,6 @@
 // Specify sensor full scale
 uint8_t Mmode = 0x06;        // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
 float accel_res, gyro_res, mag_res;      // scale resolutions per LSB for the sensors
-  
-// Pin definitions
-int intPin = 12;  // These can be changed, 2 and 3 are the Arduinos ext int pins
-int myLed = 13; // Set up pin 13 led for toggling
-
 
 float magCalibration[3] = {0, 0, 0}, magbias[3] = {0, 0, 0};  // Factory mag calibration and mag bias
 float gyroBias[3] = {0, 0, 0}, accelBias[3] = {0, 0, 0};      // Bias corrections for gyro and accelerometer
@@ -223,21 +217,98 @@ float GyroMeasDrift = PI * (0.0f  / 180.0f);   // gyroscope measurement drift in
 // In any case, this is the free parameter in the Madgwick filtering and fusion scheme.
 float beta = sqrt(3.0f / 4.0f) * GyroMeasError*0.1;   // compute beta
 float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;   // compute zeta, the other free parameter in the Madgwick scheme usually set to a small or zero value
-#define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
-#define Ki 0.0f
+// these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
+#define Kp 25.0f
+#define Ki 0.25f
 
-uint32_t delt_t = 0; // used to control display output rate
-uint32_t count = 0, sumCount = 0; // used to control display output rate
 float pitch, yaw, roll;
-float deltat = 0.0f, sum = 0.0f;        // integration interval for both filter schemes
-uint32_t lastUpdate = 0, firstUpdate = 0; // used to calculate integration interval
+float deltat = 0.0f;        // integration interval for both filter schemes
+uint32_t lastUpdate = 0;//, firstUpdate = 0; // used to calculate integration interval
 uint32_t Now = 0;        // used to calculate integration interval
 
-volatile float a[3], g[3], m[3]; // variables to hold latest sensor data values 
+float a[3], g[3], m[3]; // variables to hold latest sensor data values 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
 float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for Mahony method
 
-unsigned long t_last = 0;
+
+// ################################################################################
+void read_mpu9250()
+{  
+  // If intPin goes high, all data registers have new data
+  if (readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {  // On interrupt, check if data ready interrupt    
+    readAccelData(a);  // Read the x/y/z adc values   
+    readGyroData(g); // Read the x/y/z adc values  
+  }
+
+  if(readByte(AK8963_ADDRESS, AK8963_ST1) & 0x01) { // wait for magnetometer data ready bit to be set    
+    readMagData(m);  // Read the x/y/z adc values     
+//    Serial.print(m[0]); Serial.print("\t");  Serial.print(m[1]);  Serial.print("\t");  Serial.print(m[2]); Serial.print("\n");
+  }
+  
+  // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
+  // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
+  // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
+  // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
+  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention. 
+  
+//  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
+//  MadgwickQuaternionUpdate(a, g, m);
+//  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
+  MahonyQuaternionUpdate(a, g, m);
+
+
+    adjustAccelData(a, q);
+    
+      Now = micros();
+      deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+      lastUpdate = Now;
+    
+//    Serial.print(1000000.0/((float)(micros()-t_last)),1); Serial.print("\t");
+//    t_last = micros(); 
+//    Serial.print("\n");           
+      
+    // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
+    // In this coordinate system, the positive z-axis is down toward Earth. 
+    // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
+    // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
+    // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
+    // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
+    // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
+    // applied in the correct order which for this configuration is yaw, pitch, and then roll.
+    // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
+      yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+      pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+      roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+      pitch *= 180.0f / PI;
+      yaw   *= 180.0f / PI; 
+      yaw   -= 12.2; // Declination at Burbank, California is 12.2 degrees
+//      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
+      roll  *= 180.0f / PI;
+
+
+    
+//      serialPrintArray(q);
+
+//      Serial.print(yaw, 2);  Serial.print("\n ");
+//      Serial.print(pitch, 2);  Serial.print("\t ");
+//      Serial.println(roll, 2);   
+
+      // With these settings the filter is updating at a ~145 Hz rate using the Madgwick scheme and 
+      // >200 Hz using the Mahony scheme even though the display refreshes at only 2 Hz.
+      // The filter update rate is determined mostly by the mathematical steps in the respective algorithms, 
+      // the processor speed (8 MHz for the 3.3V Pro Mini), and the magnetometer ODR:
+      // an ODR of 10 Hz for the magnetometer produce the above rates, maximum magnetometer ODR of 100 Hz produces
+      // filter update rates of 36 - 145 and ~38 Hz for the Madgwick and Mahony schemes, respectively. 
+      // This is presumably because the magnetometer read takes longer than the gyro or accelerometer reads.
+      // This filter update rate should be fast enough to maintain accurate platform orientation for 
+      // stabilization control of a fast-moving robot or quadcopter. Compare to the update rate of 200 Hz
+      // produced by the on-board Digital Motion Processor of Invensense's MPU6050 6 DoF and MPU9150 9DoF sensors.
+      // The 3.3 V 8 MHz Pro Mini is doing pretty well!
+//    }
+//  }
+
+}
+
 
 // #######################################################################################################
 void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp, int accel_dlpf)
@@ -296,10 +367,6 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
       Serial.println(mag_bits);
   }
   
-  // Set up the interrupt pin, its set as active high, push-pull
-  pinMode(intPin, INPUT);
-  digitalWrite(intPin, LOW);
-  
   // Read the WHO_AM_I register, this is a good test of communication
   byte c = readByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250);  // Read WHO_AM_I register for MPU-9250
   if (SerialDebug){
@@ -353,90 +420,9 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
     Serial.println(c, HEX);
 //    while(1) ; // Loop forever if communication doesn't happen
   }
-}
 
-// ################################################################################
-void read_mpu9250()
-{  
-  // If intPin goes high, all data registers have new data
-  if (readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {  // On interrupt, check if data ready interrupt    
-    readAccelData(a);  // Read the x/y/z adc values   
-    readGyroData(g); // Read the x/y/z adc values  
-  }
-
-  if(readByte(AK8963_ADDRESS, AK8963_ST1) & 0x01) { // wait for magnetometer data ready bit to be set    
-    readMagData(m);  // Read the x/y/z adc values     
-//    Serial.print(m[0]); Serial.print("\t");  Serial.print(m[1]);  Serial.print("\t");  Serial.print(m[2]); Serial.print("\n");
-  }
-  
-  // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
-  // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
-  // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
-  // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
-  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
-  // This is ok by aircraft orientation standards!  
-  // Pass gyro rate as rad/s
-//  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
-  MadgwickQuaternionUpdate(a, g, m);
-//  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
-
-
-//    adjustAccelData(a, q);
-    
-//      serialPrintArray(q);
-    
-      Now = micros();
-      deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-      lastUpdate = Now;
-    
-      sum += deltat; // sum for averaging filter update rate
-      sumCount++;
-//    Serial.print(1000000.0/((float)(micros()-t_last)),1); Serial.print("\t");
-//    t_last = micros(); 
-//    Serial.print("\n");           
-      
-    // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
-    // In this coordinate system, the positive z-axis is down toward Earth. 
-    // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
-    // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
-    // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
-    // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
-    // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
-    // applied in the correct order which for this configuration is yaw, pitch, and then roll.
-    // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-      yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-      pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-      roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-      pitch *= 180.0f / PI;
-      yaw   *= 180.0f / PI; 
-      yaw   -= 12.2; // Declination at Burbank, California is 12.2 degrees
-//      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-      roll  *= 180.0f / PI;
-
-
-//        Serial.print(yaw, 2);  Serial.print("\t ");
-//        Serial.print(pitch, 2);  Serial.print("\t ");
-//        Serial.println(roll, 2);   
-
-    
-      // With these settings the filter is updating at a ~145 Hz rate using the Madgwick scheme and 
-      // >200 Hz using the Mahony scheme even though the display refreshes at only 2 Hz.
-      // The filter update rate is determined mostly by the mathematical steps in the respective algorithms, 
-      // the processor speed (8 MHz for the 3.3V Pro Mini), and the magnetometer ODR:
-      // an ODR of 10 Hz for the magnetometer produce the above rates, maximum magnetometer ODR of 100 Hz produces
-      // filter update rates of 36 - 145 and ~38 Hz for the Madgwick and Mahony schemes, respectively. 
-      // This is presumably because the magnetometer read takes longer than the gyro or accelerometer reads.
-      // This filter update rate should be fast enough to maintain accurate platform orientation for 
-      // stabilization control of a fast-moving robot or quadcopter. Compare to the update rate of 200 Hz
-      // produced by the on-board Digital Motion Processor of Invensense's MPU6050 6 DoF and MPU9150 9DoF sensors.
-      // The 3.3 V 8 MHz Pro Mini is doing pretty well!
-  
-//      count = millis(); 
-//      sumCount = 0;
-//      sum = 0;    
-//    }
-//  }
-
+  //Set the time for the state estimator
+  lastUpdate = micros();
 }
 
 

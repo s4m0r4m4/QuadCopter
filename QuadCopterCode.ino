@@ -15,7 +15,7 @@ int accel_dlpf = 41; // 0, 41, 92, 184, 460
 //volatile float t_last;
 const float update_state_deltaT = 1000000;
 // 6 DOF State
-volatile float x[6];
+float x[6];
 
 // #######################################################################
 void setup() {
@@ -28,7 +28,7 @@ void setup() {
   setup_mpu9250(accel_range, gyro_range, mag_bits, gyro_dlpf, accel_dlpf);
   
 //  pinMode(13, OUTPUT);
-  Timer1.initialize(update_state_deltaT);         // initialize timer1, and set a 1/2 second period
+//  Timer1.initialize(update_state_deltaT);         // initialize timer1, and set a 1/2 second period
 //  Timer1.attachInterrupt(callback_UpdateState);  // attaches callback() as a timer overflow interrupt
   
   // Start the initial time
@@ -38,7 +38,9 @@ void setup() {
 // #######################################################################
 void loop() {
 
-  read_mpu9250();  //(a, g, m); //&intFlag_MPU9250,
+  read_mpu9250();
+
+//  serialPrintArray(x);
 
 }
 
