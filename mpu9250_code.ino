@@ -245,27 +245,21 @@ void read_mpu9250()
 //    Serial.print(m[0]); Serial.print("\t");  Serial.print(m[1]);  Serial.print("\t");  Serial.print(m[2]); Serial.print("\n");
   }
   
-  // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
-  // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
-  // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
-  // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
-  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention. 
-  
+
 //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
 //  MadgwickQuaternionUpdate(a, g, m);
 //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
   MahonyQuaternionUpdate(a, g, m);
 
-
     adjustAccelData(a, q);
-    
-      Now = micros();
-      deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-      lastUpdate = Now;
+  
+    Now = micros();
+    deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+    lastUpdate = Now;
     
 //    Serial.print(1000000.0/((float)(micros()-t_last)),1); Serial.print("\t");
 //    t_last = micros(); 
-//    Serial.print("\n");           
+//    Serial.print("\n");
       
     // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
     // In this coordinate system, the positive z-axis is down toward Earth. 
@@ -276,37 +270,35 @@ void read_mpu9250()
     // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
     // applied in the correct order which for this configuration is yaw, pitch, and then roll.
     // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-      yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-      pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-      roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-      pitch *= 180.0f / PI;
-      yaw   *= 180.0f / PI; 
-      yaw   -= 12.2; // Declination at Burbank, California is 12.2 degrees
+    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    pitch *= 180.0f / PI;
+    yaw   *= 180.0f / PI; 
+    yaw   -= 12.2; // Declination at Burbank, California is 12.2 degrees
 //      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-      roll  *= 180.0f / PI;
-
-
-    
+    roll  *= 180.0f / PI;
+  
 //      serialPrintArray(q);
 
-//      Serial.print(yaw, 2);  Serial.print("\n ");
+//      Serial.print(yaw, 2);  Serial.print("\t ");
 //      Serial.print(pitch, 2);  Serial.print("\t ");
-//      Serial.println(roll, 2);   
+//      Serial.println(roll, 2); 
 
-      // With these settings the filter is updating at a ~145 Hz rate using the Madgwick scheme and 
-      // >200 Hz using the Mahony scheme even though the display refreshes at only 2 Hz.
-      // The filter update rate is determined mostly by the mathematical steps in the respective algorithms, 
-      // the processor speed (8 MHz for the 3.3V Pro Mini), and the magnetometer ODR:
-      // an ODR of 10 Hz for the magnetometer produce the above rates, maximum magnetometer ODR of 100 Hz produces
-      // filter update rates of 36 - 145 and ~38 Hz for the Madgwick and Mahony schemes, respectively. 
-      // This is presumably because the magnetometer read takes longer than the gyro or accelerometer reads.
-      // This filter update rate should be fast enough to maintain accurate platform orientation for 
-      // stabilization control of a fast-moving robot or quadcopter. Compare to the update rate of 200 Hz
-      // produced by the on-board Digital Motion Processor of Invensense's MPU6050 6 DoF and MPU9150 9DoF sensors.
-      // The 3.3 V 8 MHz Pro Mini is doing pretty well!
-//    }
-//  }
 
+
+
+    // With these settings the filter is updating at a ~145 Hz rate using the Madgwick scheme and 
+    // >200 Hz using the Mahony scheme even though the display refreshes at only 2 Hz.
+    // The filter update rate is determined mostly by the mathematical steps in the respective algorithms, 
+    // the processor speed (8 MHz for the 3.3V Pro Mini), and the magnetometer ODR:
+    // an ODR of 10 Hz for the magnetometer produce the above rates, maximum magnetometer ODR of 100 Hz produces
+    // filter update rates of 36 - 145 and ~38 Hz for the Madgwick and Mahony schemes, respectively. 
+    // This is presumably because the magnetometer read takes longer than the gyro or accelerometer reads.
+    // This filter update rate should be fast enough to maintain accurate platform orientation for 
+    // stabilization control of a fast-moving robot or quadcopter. Compare to the update rate of 200 Hz
+    // produced by the on-board Digital Motion Processor of Invensense's MPU6050 6 DoF and MPU9150 9DoF sensors.
+    // The 3.3 V 8 MHz Pro Mini is doing pretty well!
 }
 
 
@@ -330,7 +322,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
     default:
       Serial.print("[ERROR]: Bad Gyro range command: ");
       Serial.println(gyro_range);
-  }    
+  }
   if (verbose) {
     Serial.print("[Setup] Setting Gryo command:");
     sprintf(dummy_str, " %x (hex) =  %d (dec) \n", gyro_range_cmd, gyro_range_cmd);
@@ -472,7 +464,7 @@ void initMPU9250(int gyro_range_cmd, int accel_range_cmd, int gyro_dlpf, int acc
  // The accelerometer, gyro, and thermometer are set to 1 kHz sample rates, 
  // but all these rates are further reduced by a factor of 5 to 200 Hz because of the SMPLRT_DIV setting
  // Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
-  writeByte(MPU9250_ADDRESS, SMPLRT_DIV, 0x07);  // Use a 200 Hz rate; a rate consistent with the filter update rate 
+  writeByte(MPU9250_ADDRESS, SMPLRT_DIV, 0x5);  // Use a 200 Hz rate; a rate higher than the filter update rate 
  
  // Set gyroscope full scale range
  // Range selects FS_SEL and AFS_SEL are 0 - 3, so 2-bit values are left-shifted into positions 4:3

@@ -4,7 +4,10 @@
 void serialPrintArray(float *vec){
   Serial.print(vec[0]); Serial.print("\t");
   Serial.print(vec[1]); Serial.print("\t");
-  Serial.print(vec[2]); Serial.print("\n");
+  Serial.print(vec[2]); Serial.print("\t");
+}
+void serialPrintArrayLn(float *vec){
+  serialPrintArray(vec); Serial.print("\n");
 }
 
 // ###############################################################################################       
@@ -24,37 +27,67 @@ void readAccelData(float *accel_vec) //
 }
 
 // ###############################################################################################     
-void adjustAccelData(float *accel_vec, float  *q){
+void adjustAccelData(float *accel_vec, float  *q)
+{
   // Auxiliary variables to avoid repeated arithmetic
-  float q1q1 = q[1] * q[1];
-  float q1q2 = q[1] * q[2];
-  float q1q3 = q[1] * q[3];
-  float q1q4 = q[1] * q[4];
-  float q2q2 = q[2] * q[2];
-  float q2q3 = q[2] * q[3];
-  float q2q4 = q[2] * q[4];
-  float q3q3 = q[3] * q[3];
-  float q3q4 = q[3] * q[4];
-  float q4q4 = q[4] * q[4];
+  float q1q1 = q[0] * q[0];
+  float q1q2 = q[0] * q[1];
+  float q1q3 = q[0] * q[2];
+  float q1q4 = q[0] * q[3];
+  float q2q2 = q[1] * q[1];
+  float q2q3 = q[1] * q[2];
+  float q2q4 = q[1] * q[3];
+  float q3q3 = q[2] * q[2];
+  float q3q4 = q[2] * q[3];
+  float q4q4 = q[3] * q[3];
+
+  // Flipping q0 and q4
+//  float q1q1 = q[1] * q[1];
+//  float q1q2 = q[1] * q[2];
+//  float q1q3 = q[1] * q[3];
+//  float q1q4 = q[1] * q[0];
+//  float q2q2 = q[2] * q[2];
+//  float q2q3 = q[2] * q[3];
+//  float q2q4 = q[2] * q[0];
+//  float q3q3 = q[3] * q[3];
+//  float q3q4 = q[3] * q[0];
+//  float q4q4 = q[0] * q[0];
+
+//    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+//    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+//    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+//    pitch *= 180.0f / PI;
+//    yaw   *= 180.0f / PI; 
+//    yaw   -= 12.2; // Declination at Burbank, California is 12.2 degrees
+//    roll  *= 180.0f / PI;
+//      Serial.print(yaw, 2);  Serial.print("\t ");
+//      Serial.print(pitch, 2);  Serial.print("\t ");
+//      Serial.print(roll, 2);  Serial.println("\t ");
     
 //  float Q_ab[3][3] = {{q1q1-q2q2-q3q3+q4q4, 2*(q1q2+q3q4), 2*(q1q3-q2q4)},
 //                      {2*(q1q2-q3q4), -q1q1+q2q2-q3q3+q4q4, 2*(q2q3+q1q4)},
 //                      {2*(q1q3+q2q4), 2*(q2q3-q1q4), -q1q1-q2q2+q3q3+q4q4}};
                  
-  float Q_ab[3] = {2*(q1q3-q2q4), 2*(q2q3+q1q4), -q1q1-q2q2+q3q3+q4q4};
-  
-  Serial.print(sqrt(Q_ab[0]*Q_ab[0] +Q_ab[1]*Q_ab[1] +Q_ab[2]*Q_ab[2]));
-  Serial.print("\t");
-  
+//  float Q_ab[3] = {q1q1-q2q2-q3q3+q4q4, 2*(q1q2-q3q4), 2*(q1q3+q2q4)};
+  float Q_ab[3] = {q1q1-q2q2-q3q3+q4q4, 2*(q1q2+q3q4), 2*(q1q3-q2q4)};
+//  float q_star[4] = {q[0], -q[1], -q[2], -q[3]};
+
+//  Serial.println(sqrt((2*(q1q3-q2q4))*(2*(q1q3-q2q4)) + (2*(q2q3+q1q4))*(2*(q2q3+q1q4)) + (-q1q1-q2q2+q3q3+q4q4)*(-q1q1-q2q2+q3q3+q4q4)));
+
   float new_accel_vec[3];
   float new_g[3];
+  float new_g2[3];
   for (int i=0;i<3;i++){
-    new_g[i] = Q_ab[i]*-9.81; //matrix multiplication, simplified for a single-valued g-vector of constant value
-    new_accel_vec[i] = accel_vec[i] + new_g[i];
+    new_g[2-i] = Q_ab[i]*-9.81; //matrix multiplication, simplified for a single-valued g-vector of constant value
+    // new_accel_vec[i] = accel_vec[i] + new_g[i];
   }
+  new_accel_vec[0] = accel_vec[0] - new_g[0];
+  new_accel_vec[1] = accel_vec[1] + new_g[1];
+  new_accel_vec[2] = accel_vec[2] + new_g[2];
+
 //  serialPrintArray(accel_vec);
-  serialPrintArray(new_g);
-//  serialPrintArray(new_accel_vec);  
+//  serialPrintArrayLn(new_g);
+  serialPrintArrayLn(new_accel_vec);  
   
 }
 // ###############################################################################################       
@@ -91,9 +124,13 @@ void readMagData(float *mag_vec) //int16_t * destination)
   }
 
   magbias[0] = +609.360; //+666.715; //+470.0;  // User environmental x-axis correction in milliGauss, should be automatically calculated
-  magbias[1] = +447.380; //+452.795; //+120.0;  // User environmental x-axis correction in milliGauss
-  magbias[2] = -400.095; //-412.265; //+125.0;  // User environmental x-axis correction in milliGauss
-  
+  magbias[1] = +447.380; //+452.795; //+120.0;  // User environmental y-axis correction in milliGauss
+  magbias[2] = -400.095; //-412.265; //+125.0;  // User environmental z-axis correction in milliGauss
+
+//  237.5 +N // from http://www.ngdc.noaa.gov/geomag-web/#igrfwmm
+//  51.672 + E
+// 404.095 + Up vertical
+
   // Calculate the magnetometer values in milliGauss
   // Include factory calibration per data sheet and user environmental corrections
   m[0] = (float)tmp[0]*mag_res*magCalibration[0] - magbias[0];  // get actual magnetometer value, this depends on scale being set

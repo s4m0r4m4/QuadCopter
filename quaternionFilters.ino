@@ -114,7 +114,14 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
   
   
  // Similar to Madgwick scheme but uses proportional and integral filtering on the error between estimated reference vectors and
- // measured ones. 
+ // measured ones.
+
+    // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
+  // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
+  // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
+  // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
+  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention. 
+  
 //void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 void MahonyQuaternionUpdate(float *a, float *g, float *m)
 {
@@ -124,17 +131,29 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
 //  if(passThru)MahonyQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f,
 //gx*PI/180.0f, -gz*PI/180.0f,  mx,  my, mz);
   
-    float ax = -a[1];
-    float ay = -a[0];
+//    float ax = -a[1];
+//    float ay = -a[0];
+//    float az = a[2];
+//
+//    float gx = g[1]*PI/180.0f; // Pass gyro rate as rad/s
+//    float gy = g[0]*PI/180.0f;
+//    float gz = -g[2]*PI/180.0f;
+//
+//    float mx = m[0];
+//    float my = m[1]; 
+//    float mz = m[2];
+    
+    float ax = a[0];
+    float ay = a[1];
     float az = a[2];
 
-    float gx = g[1]*PI/180.0f; // Pass gyro rate as rad/s
-    float gy = g[0]*PI/180.0f;
-    float gz = -g[2]*PI/180.0f;
+    float gx = g[0]*PI/180.0f; // Pass gyro rate as rad/s
+    float gy = g[1]*PI/180.0f;
+    float gz = g[2]*PI/180.0f;
 
-    float mx = m[0];
-    float my = m[1]; 
-    float mz = m[2];
+    float mx = m[1];
+    float my = m[0]; 
+    float mz = -m[2];
     
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
     float norm;

@@ -1,4 +1,3 @@
-//#include "mpu9250_code"
 #include <Wire.h>
 #include <TimerOne.h>
 
