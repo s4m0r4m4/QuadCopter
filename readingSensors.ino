@@ -27,19 +27,19 @@ void readAccelData(float *accel_vec) //
 }
 
 // ###############################################################################################     
-void adjustAccelData(float *accel_vec, float  *q)
+void adjustAccelData(float *accel_vec, float  *quat)
 {
   // Auxiliary variables to avoid repeated arithmetic
-  float q1q1 = q[0] * q[0];
-  float q1q2 = q[0] * q[1];
-  float q1q3 = q[0] * q[2];
-  float q1q4 = q[0] * q[3];
-  float q2q2 = q[1] * q[1];
-  float q2q3 = q[1] * q[2];
-  float q2q4 = q[1] * q[3];
-  float q3q3 = q[2] * q[2];
-  float q3q4 = q[2] * q[3];
-  float q4q4 = q[3] * q[3];
+  float q1q1 = quat[0] * quat[0];
+  float q1q2 = quat[0] * quat[1];
+  float q1q3 = quat[0] * quat[2];
+  float q1q4 = quat[0] * quat[3];
+  float q2q2 = quat[1] * quat[1];
+  float q2q3 = quat[1] * quat[2];
+  float q2q4 = quat[1] * quat[3];
+  float q3q3 = quat[2] * quat[2];
+  float q3q4 = quat[2] * quat[3];
+  float q4q4 = quat[3] * quat[3];
 
   // Flipping q0 and q4
 //  float q1q1 = q[1] * q[1];
@@ -81,13 +81,13 @@ void adjustAccelData(float *accel_vec, float  *q)
     new_g[2-i] = Q_ab[i]*-9.81; //matrix multiplication, simplified for a single-valued g-vector of constant value
     // new_accel_vec[i] = accel_vec[i] + new_g[i];
   }
-  new_accel_vec[0] = accel_vec[0] - new_g[0];
-  new_accel_vec[1] = accel_vec[1] + new_g[1];
-  new_accel_vec[2] = accel_vec[2] + new_g[2];
+  a[0] = accel_vec[0] - new_g[0];
+  a[1] = accel_vec[1] + new_g[1];
+  a[2] = accel_vec[2] + new_g[2];
 
 //  serialPrintArray(accel_vec);
-//  serialPrintArrayLn(new_g);
-  serialPrintArrayLn(new_accel_vec);  
+//  serialPrintArray(new_g);
+//  serialPrintArrayLn(new_accel_vec);  
   
 }
 // ###############################################################################################       
