@@ -40,7 +40,8 @@ void updateState() //
 
 float v_avg = 0;
 float cutoff = 0.1;
-if (Now>5200000){
+
+//if (Now>5200000){
   for (int j = 0; j<3; j++){
       //v_avg = 1.0/2.0*(v[j] + (v[j] + a[j]*deltat));
       if (abs(a[j])>cutoff){
@@ -51,9 +52,9 @@ if (Now>5200000){
       //x[j] += v_avg*deltat;
       }
   }
-} else {
-//   Serial.println("WAITING for ACCEL to CALM down");
-}
+//} else {
+////   Serial.println("WAITING for ACCEL to CALM down");
+//}
   
 //  Serial.print(Now); Serial.print("\t");
   serialPrintArray(a);

@@ -3,6 +3,9 @@
 #include <Servo.h>
 
 Servo esc1;
+Servo esc2;
+Servo esc3;
+Servo esc4;
 
 // Interrupt flag for MPU 9250 (??)
 volatile bool intFlag_MPU9250 = false;
@@ -23,22 +26,38 @@ float v[3]; //vx, vy, vz
 float euler_angles[3]; // yaw, pitch, roll (3-2-1)
 float deltat = 0.0f;        // integration interval for both filter schemes
 
+
+int val11 = 0;
+int val10 = 0;
+int val9 = 0;
+int valLeftThrottle = 0;
+int val5 = 0;
+int val3 = 0;
+
+
 // #######################################################################
 void setup() {
-  
+  // Setup Serial Comms
   Serial.begin(115200);
-  
-  esc1.attach(9); // setup ESC1 on pin 9
-  
-  //Initial state = 0
-  for(int i = 0; i<3; i++){
-    x[i] = 0.0f;
-    v[i] = 0.0f;
-    euler_angles[i] = 0.0f;
-  }
+
+  // Setup motor control
+  esc1.attach(A0); // setup ESC1 on pin X
+  esc2.attach(A1);
+  esc3.attach(A2);
+  esc4.attach(A3);
+
+  // Initial State Variables
+//  for(int i = 0; i<3; i++){
+//    x[i] = 0.0f;
+//    v[i] = 0.0f;
+//    euler_angles[i] = 0.0f;
+//  }
 
   // Set up the MPU 9250 IMU board
 //  setup_mpu9250(accel_range, gyro_range, mag_bits, gyro_dlpf, accel_dlpf);
+
+  // Set up the radio reciever
+  setupRadioReceiver();
   
 //  while(millis()<10000){
 //    Now = micros();
@@ -56,16 +75,18 @@ void setup() {
 
 // #######################################################################
 void loop() {
-
-  for (int ang=0; ang<180; ang++){
-    esc1.write(ang);
-    Serial.println(ang);
-    delay(100);
-  }
-
+  int val;
 //  read_mpu9250();
 //  updateState();
 
+    readRecieverData();
+    
+    Serial.print(valLeftThrottle); Serial.print("\n");
+    esc1.write(valLeftThrottle);
+    esc2.write(valLeftThrottle);
+    esc3.write(valLeftThrottle);
+    esc4.write(valLeftThrottle);
+   
 //  serialPrintArray(x);
 
 }
