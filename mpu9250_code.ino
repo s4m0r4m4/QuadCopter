@@ -222,8 +222,6 @@ float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;   // compute zeta, the other fre
 #define Ki 0.25f
 
 float pitch, yaw, roll;
-uint32_t lastUpdate = 0;//, firstUpdate = 0; // used to calculate integration interval
-uint32_t Now = 0;        // used to calculate integration interval
 
 float a[3], g[3], m[3]; // variables to hold latest sensor data values 
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion

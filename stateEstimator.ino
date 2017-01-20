@@ -57,9 +57,9 @@ float cutoff = 0.1;
 //}
   
 //  Serial.print(Now); Serial.print("\t");
-  serialPrintArray(a);
-  serialPrintArray(v);
-  serialPrintArrayLn(x);
+//  serialPrintArray(a);
+//  serialPrintArray(v);
+//  serialPrintArrayLn(x);
 //v[0] = v[0] + 1.0f;  
 //  serialPrintArrayLn(x);
   
