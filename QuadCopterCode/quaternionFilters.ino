@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include <math.h>
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
@@ -9,7 +11,7 @@
 //void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 void MadgwickQuaternionUpdate(float *a, float *g, float *m)
 {
-    float ax = a[0]; 
+    float ax = a[0];
     float ay = a[1];
     float az = a[2];
 
@@ -20,7 +22,7 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
     float mx = m[1]; //switch mx and my
     float my = m[0]; //switch mx and my
     float mz = m[2];
-    
+
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
     float norm;
     float hx, hy, _2bx, _2bz;
@@ -110,9 +112,9 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
     q[3] = q4 * norm;
 
 }
-  
-  
-  
+
+
+
  // Similar to Madgwick scheme but uses proportional and integral filtering on the error between estimated reference vectors and
  // measured ones.
 
@@ -120,8 +122,8 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
   // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
   // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
   // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
-  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention. 
-  
+  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
+
 //void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 void MahonyQuaternionUpdate(float *a, float *g, float *m)
 {
@@ -130,7 +132,7 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
 //-gz*PI/180.0f,  mx,  my, mz);
 //  if(passThru)MahonyQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f,
 //gx*PI/180.0f, -gz*PI/180.0f,  mx,  my, mz);
-  
+
 //    float ax = -a[1];
 //    float ay = -a[0];
 //    float az = a[2];
@@ -140,9 +142,9 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
 //    float gz = -g[2]*PI/180.0f;
 //
 //    float mx = m[0];
-//    float my = m[1]; 
+//    float my = m[1];
 //    float mz = m[2];
-    
+
     float ax = a[0];
     float ay = a[1];
     float az = a[2];
@@ -152,9 +154,9 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
     float gz = g[2]*PI/180.0f;
 
     float mx = m[1];
-    float my = m[0]; 
+    float my = m[0];
     float mz = -m[2];
-    
+
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
     float norm;
     float hx, hy, bx, bz;
@@ -172,7 +174,7 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
     float q2q4 = q2 * q4;
     float q3q3 = q3 * q3;
     float q3q4 = q3 * q4;
-    float q4q4 = q4 * q4;   
+    float q4q4 = q4 * q4;
 
     // Normalise accelerometer measurement
     norm = sqrt(ax * ax + ay * ay + az * az);
@@ -202,7 +204,7 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
     vz = q1q1 - q2q2 - q3q3 + q4q4;
     wx = 2.0f * bx * (0.5f - q3q3 - q4q4) + 2.0f * bz * (q2q4 - q1q3);
     wy = 2.0f * bx * (q2q3 - q1q4) + 2.0f * bz * (q1q2 + q3q4);
-    wz = 2.0f * bx * (q1q3 + q2q4) + 2.0f * bz * (0.5f - q2q2 - q3q3);  
+    wz = 2.0f * bx * (q1q3 + q2q4) + 2.0f * bz * (0.5f - q2q2 - q3q3);
 
     // Error is cross product between estimated direction and measured direction of gravity
     ex = (ay * vz - az * vy) + (my * wz - mz * wy);

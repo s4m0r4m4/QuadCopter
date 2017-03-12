@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* MPU9250 Basic Example Code
  by: Kris Winer
  date: April 1, 2014
@@ -221,11 +223,6 @@ float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;   // compute zeta, the other fre
 #define Kp 25.0f
 #define Ki 0.25f
 
-float pitch, yaw, roll;
-
-float a[3], g[3], m[3]; // variables to hold latest sensor data values 
-float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
-float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for Mahony method
 
 
 // ################################################################################

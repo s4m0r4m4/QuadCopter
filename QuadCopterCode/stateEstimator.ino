@@ -1,8 +1,12 @@
+#include <Arduino.h>
+
 
 
 // ###############################################################################################       
 void updateState() //
 {
+  
+  float pitch, yaw, roll;
   
   Now = micros();
   deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
@@ -38,8 +42,14 @@ void updateState() //
   euler_angles[1] = roll;
   euler_angles[2] = pitch;
 
-float v_avg = 0;
-float cutoff = 0.1;
+  if ((roll<5)&&(roll>-5)&&(pitch<5)&&(pitch>-5)){
+    digitalWrite(LED_STABLE, LOW);
+  } else {
+    digitalWrite(LED_STABLE, HIGH);
+  }
+
+  float v_avg = 0;
+  float cutoff = 0.1;
 
 //if (Now>5200000){
   for (int j = 0; j<3; j++){

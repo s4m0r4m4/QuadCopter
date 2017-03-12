@@ -1,6 +1,10 @@
+#include <Arduino.h>
+
 #include <Wire.h>
-#include <TimerOne.h>
+// #include <TimerOne.h>
 #include <Servo.h>
+
+#define LED_STABLE 8
 
 Servo esc0;
 Servo esc1;
@@ -12,7 +16,7 @@ float escControlVec[4];
 volatile bool intFlag_MPU9250 = false;
 
 int accel_range = 16;// ACC_FULL_SCALE_16_G;
-int gyro_range = 500; //GYRO_FULL_SCALE_500_DPS; 
+int gyro_range = 500; //GYRO_FULL_SCALE_500_DPS;
 int mag_bits = 16;
 int gyro_dlpf = 41; // 0, 41, 92, 184, 250
 int accel_dlpf = 41; // 0, 41, 92, 184, 460
@@ -23,8 +27,12 @@ const float update_state_deltaT = 1000000;
 // Linear position
 float x[3]; // x, y, z
 // Linear velocity
-float v[3]; //vx, vy, vz
+float v[3]; // vx, vy, vz
 float euler_angles[3]; // yaw, pitch, roll (3-2-1)
+float a[3], g[3], m[3]; // variables to hold latest sensor data values
+float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};    // vector to hold quaternion
+float eInt[3] = {0.0f, 0.0f, 0.0f};       // vector to hold integral error for Mahony method
+
 float deltat = 0.0f;        // integration interval for both filter schemes
 
 uint32_t lastUpdate = 0;//, firstUpdate = 0; // used to calculate integration interval
@@ -34,6 +42,8 @@ int radioVal11 = 0;
 int radioVal10 = 0;
 int radioVal9 = 0;
 float valLeftThrottle = 0;
+float valRightThrottleUpDown = 0;
+float valRightThrottleLeftRight = 0;
 int radioVal5 = 0;
 int radioVal3 = 0;
 
@@ -61,11 +71,13 @@ void setup() {
 
   // Set up the radio reciever
   setupRadioReceiver();
-  
+
+  pinMode(LED_STABLE, OUTPUT);
+
   while(millis()<1000){}
   Now = micros();
   deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
-  lastUpdate = Now;  
+  lastUpdate = Now;
 //  //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
 //  //  MadgwickQuaternionUpdate(a, g, m);
 //  //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
@@ -78,7 +90,6 @@ void setup() {
 
 // #######################################################################
 void loop() {
-    int val;
     read_mpu9250();
     updateState();
 
