@@ -38,15 +38,19 @@ float deltat = 0.0f;        // integration interval for both filter schemes
 uint32_t lastUpdate = 0;//, firstUpdate = 0; // used to calculate integration interval
 uint32_t Now = 0;        // used to calculate integration interval
 
-int radioVal11 = 0;
-int radioVal10 = 0;
-int radioVal9 = 0;
-float valLeftThrottle = 0;
-float valRightThrottleUpDown = 0;
-float valRightThrottleLeftRight = 0;
-int radioVal5 = 0;
-int radioVal3 = 0;
+volatile float valLeftThrottle = 0;
+volatile float valRightThrottleUpDown = 0;
+volatile float valRightThrottleLeftRight = 0;
 
+#define pinLeftThrottle 9
+#define pinRightThrottleUpDown 10
+#define pinRightThrottleLeftRight 11
+#define NUM_PINS 12 // Number of potential input pins
+volatile unsigned long pwm_val = 0;
+volatile unsigned long prev_times[NUM_PINS]; //
+volatile float radioRecieverVals[NUM_PINS];
+uint8_t latest_interrupted_pin;
+int dumbCounter = 0;
 
 // #######################################################################
 void setup() {
@@ -75,9 +79,12 @@ void setup() {
   pinMode(LED_STABLE, OUTPUT);
 
   while(millis()<1000){}
+
+  // set integration time by time elapsed since last filter update
   Now = micros();
-  deltat = ((Now - lastUpdate)/1000000.0f); // set integration time by time elapsed since last filter update
+  deltat = ((Now - lastUpdate)/1000000.0f);
   lastUpdate = Now;
+
 //  //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
 //  //  MadgwickQuaternionUpdate(a, g, m);
 //  //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
@@ -90,18 +97,19 @@ void setup() {
 
 // #######################################################################
 void loop() {
+
     read_mpu9250();
     updateState();
 
-    readRecieverData();
+// readRecieverData();
+// delay(50);
 
+    // noInterrupts(); // don't want to interrupt from radio reciever to screw up the calculated control vector
     calculate_control_vec();
+    // interrupts();
 
-//    Serial.print(valLeftThrottle); Serial.print("\n");
     esc0.write(escControlVec[0]);
     esc1.write(escControlVec[1]);
     esc2.write(escControlVec[2]);
     esc3.write(escControlVec[3]);
-
-
 }
