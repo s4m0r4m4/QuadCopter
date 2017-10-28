@@ -3,12 +3,23 @@
 // ###############################################################################################
 void calculate_control_vec()
 {
+  // ----------- LQR state gains -----------
+  // // Derivitive feedback term
+  // const float kD = 0.243/4.0; //3.43; //0.1114; //0.1431; //0.0385; //0.01;
+  // // Propoortional feedback term
+  // const float kP = 4.243/4.0;//6.83;// 0.9487;//1.5652;// 0.1118; //0.3;
+  // // Reference adjustment
+  // const float Nbar = kP; //0.1118;
+  // ---------------------------------------
+
+  // ----------- PDF state gains -----------
   // Derivitive feedback term
-  float kD = 0.243/4.0; //3.43; //0.1114; //0.1431; //0.0385; //0.01;
+  const float kD = 0.1045;
   // Propoortional feedback term
-  float kP = 4.243/4.0;//6.83;// 0.9487;//1.5652;// 0.1118; //0.3;
+  const float kP = 2.071;
   // Reference adjustment
-  float Nbar = kP; //0.1118; //
+  const float Nbar = kP; //0.1118;
+  // ---------------------------------------
 
   float pitch = 0.0;
   float roll = 0;
@@ -41,9 +52,16 @@ void calculate_control_vec()
     //   pitch_rate_err = 0-g[2]; // Through trial and error
     //   roll_rate_err = 0-g[1]; // Through trial and error
 
+    // --- LQR Controller design ---
     // u = Nbar*r - K*x
-    deltaF_pitch = (radioRecieverVals[pinRightThrottleUpDown]*Nbar - pitch*kP)*deg2rad + (0.0f*Nbar - pitch_rate*kD)*deg2rad;
-    deltaF_roll = (radioRecieverVals[pinRightThrottleLeftRight]*Nbar - roll*kP)*deg2rad + (0.0f*Nbar - roll_rate*kD)*deg2rad;
+    // deltaF_pitch = (radioRecieverVals[pinRightThrottleUpDown]*Nbar - pitch*kP)*deg2rad + (0.0f*Nbar - pitch_rate*kD)*deg2rad;
+    // deltaF_roll = (radioRecieverVals[pinRightThrottleLeftRight]*Nbar - roll*kP)*deg2rad + (0.0f*Nbar - roll_rate*kD)*deg2rad;
+    // ------------------------------
+
+    // --- PDF Controller design ---
+    deltaF_pitch = (-radioRecieverVals[pinRightThrottleUpDown] - pitch)*deg2rad*kP + (0.0f - pitch_rate)*deg2rad*kD;
+    deltaF_roll = (radioRecieverVals[pinRightThrottleLeftRight] - roll)*deg2rad*kP + (0.0f - roll_rate)*deg2rad*kD;
+    // ------------------------------
   }
 
   // ratio
@@ -120,7 +138,7 @@ float thrust2valLinear(float deltaThrust, float val0){
 }
 
 
-// ---------------- New Stuff ---------------------
+// ---------- Nonlinear transformation from desired force to motor command val ------------
 const float valMin = -30.0;
 const float linToQuad = 40.0;
 const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
@@ -144,16 +162,3 @@ float val2thrustNonLinear(float val0){
     // return val0*forceAtLinToQuad/40;
   }
 }
-// -------------------------------------------------
-
-// float thrust2valNonLinear(float deltaThrust){
-//   float deltaOmega;
-//   if (deltaThrust>0){
-//     deltaOmega = sqrt(deltaThrust)*11664.14848; ///0.0258; // omega in revolutions per minute (RPM)
-//   } else {
-//     deltaOmega = -sqrt(-deltaThrust)*11664.14848; ///0.0258; // omega in revolutions per minute (RPM)
-//   }
-//   // max RPM of 14618 (go from 0 to max if throttle from 40 to 180)
-//   const float rpm2val = (180.0-40.0)/(14618.0-0.0);
-//   return deltaOmega*rpm2val;
-// }
