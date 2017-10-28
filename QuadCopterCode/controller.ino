@@ -1,16 +1,12 @@
 #include <Arduino.h>
 
-
-const unsigned long timeout_limit = 100000;
-const float deg2rad = PI / 180.0f;
-
 // ###############################################################################################
 void calculate_control_vec()
 {
   // Derivitive feedback term
-  float kD = 0.1114; //0.1431; //0.0385; //0.01;
+  float kD = 0.243/4.0; //3.43; //0.1114; //0.1431; //0.0385; //0.01;
   // Propoortional feedback term
-  float kP = 0.9487;//1.5652;// 0.1118; //0.3;
+  float kP = 4.243/4.0;//6.83;// 0.9487;//1.5652;// 0.1118; //0.3;
   // Reference adjustment
   float Nbar = kP; //0.1118; //
 
@@ -52,10 +48,11 @@ void calculate_control_vec()
 
   // ratio
   if (check_for_active_signal()==true){
-    escControlVec[0] = valLeftThrottle + thrust2val(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
-    escControlVec[1] = valLeftThrottle + thrust2val(deltaF_pitch - deltaF_roll, valLeftThrottle); // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
-    escControlVec[2] = valLeftThrottle + thrust2val(deltaF_pitch + deltaF_roll, valLeftThrottle); // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
-    escControlVec[3] = valLeftThrottle + thrust2val(-deltaF_pitch + deltaF_roll, valLeftThrottle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
+    // valLeftThrottle +
+    escControlVec[0] = thrust2valNonLinear(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
+    escControlVec[1] = thrust2valNonLinear(deltaF_pitch - deltaF_roll, valLeftThrottle); // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
+    escControlVec[2] = thrust2valNonLinear(deltaF_pitch + deltaF_roll, valLeftThrottle); // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
+    escControlVec[3] = thrust2valNonLinear(-deltaF_pitch + deltaF_roll, valLeftThrottle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
     } else {
     // if no radio signal, power off the motors
     escControlVec[0] = 0.0;
@@ -64,24 +61,25 @@ void calculate_control_vec()
     escControlVec[3] = 0.0;
   }
 
-  if (dumbCounter>50){
-    Serial.print(radioRecieverVals[pinRightThrottleUpDown]); Serial.print("\t");
-    Serial.print(pitch); Serial.print("\t");
-    Serial.print(radioRecieverVals[pinRightThrottleLeftRight]); Serial.print("\t");
-    Serial.print(roll); Serial.print("\t");
-    Serial.print("|\t");
-    Serial.print(pitch_rate); Serial.print("\t");
-    Serial.print(roll_rate); Serial.print("\t");
-    Serial.print("|\t");
-
-  //  Serial.print(pitch_err); Serial.print("\t");
-  //  Serial.print(roll_err); Serial.print("\t");
-    // Serial.print(pitch_rate_err); Serial.print("\t");
-    // Serial.print(roll_rate_err); Serial.print("\t");
-    Serial.print(deltaF_pitch); Serial.print("\t");
-    Serial.print(deltaF_roll); Serial.print("\t");
-    Serial.print(thrust2val(deltaF_pitch, valLeftThrottle)); Serial.print("\t");
-    Serial.print(thrust2val(deltaF_roll, valLeftThrottle)); Serial.print("\t");
+  if (dumbCounter>15){
+    // Serial.print(valLeftThrottle); Serial.print("|\t");
+  //  Serial.print(radioRecieverVals[pinRightThrottleUpDown]*Nbar); Serial.print("\t");
+   Serial.print(pitch*kP); Serial.print("\t");
+  //  Serial.print(radioRecieverVals[pinRightThrottleLeftRight]*Nbar); Serial.print("\t");
+   Serial.print(roll*kP); Serial.print("\t");
+  //  Serial.print("|\t");
+   Serial.print(pitch_rate*kD); Serial.print("\t");
+   Serial.print(roll_rate*kD); Serial.print("\t");
+  //  Serial.print("|\t");
+//
+//  //  Serial.print(pitch_err); Serial.print("\t");
+//  //  Serial.print(roll_err); Serial.print("\t");
+//    // Serial.print(pitch_rate_err); Serial.print("\t");
+//    // Serial.print(roll_rate_err); Serial.print("\t");
+  //  Serial.print(deltaF_pitch); Serial.print("\t");
+  //  Serial.print(deltaF_roll); Serial.print("\t");
+    // Serial.print(thrust2valNonLinear(deltaF_pitch, valLeftThrottle)); Serial.print("\t");
+    // Serial.print(thrust2valNonLinear(deltaF_roll, valLeftThrottle)); Serial.print("\t");
     Serial.print("|\t");
    serialPrintArray4(escControlVec);
    // serialPrintArray(euler_angles);
@@ -91,8 +89,6 @@ void calculate_control_vec()
     dumbCounter++;
   }
 }
-
-
 
 bool check_for_active_signal(){
   // Serial.print("| ControllerCheck = ");
@@ -108,7 +104,7 @@ bool check_for_active_signal(){
   }
 }
 
-float thrust2val(float deltaThrust, float val0){
+float thrust2valLinear(float deltaThrust, float val0){
   // max RPM of 14618 (go from 0 to max if throttle from 40 to 180)
   const float rpm2val = (180.0-40.0)/(14618.0-0.0);
   const float thrust2rpm = (14618.0-0.0)/(3.5-0);
@@ -123,7 +119,34 @@ float thrust2val(float deltaThrust, float val0){
   return deltaThrust*thrust2rpm*rpm2val;
 }
 
-// float thrust2val(float deltaThrust){
+
+// ---------------- New Stuff ---------------------
+const float valMin = -30.0;
+const float linToQuad = 40.0;
+const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
+const float maxThrustOverVal = (3.5-forceAtLinToQuad)/((180.0-linToQuad)*(180.0-linToQuad));  // (180-40.0)^2= 19600
+
+float thrust2valNonLinear(float deltaThrust, float val0){
+  float thrust = max(0, deltaThrust + val2thrustNonLinear(val0));
+  if (thrust>forceAtLinToQuad){
+    float valOut = sqrt((thrust-forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
+    return constrain(valOut, 0.0, 180.0);
+  } else {
+    return thrust/(forceAtLinToQuad/(linToQuad-valMin))+valMin;
+  }
+}
+
+float val2thrustNonLinear(float val0){
+  if (val0>linToQuad){
+    return maxThrustOverVal*(val0-linToQuad)*(val0-linToQuad)+forceAtLinToQuad;
+  } else {
+    return (val0-valMin)*forceAtLinToQuad/(linToQuad-valMin);
+    // return val0*forceAtLinToQuad/40;
+  }
+}
+// -------------------------------------------------
+
+// float thrust2valNonLinear(float deltaThrust){
 //   float deltaOmega;
 //   if (deltaThrust>0){
 //     deltaOmega = sqrt(deltaThrust)*11664.14848; ///0.0258; // omega in revolutions per minute (RPM)
