@@ -12,7 +12,7 @@ Servo esc2;
 Servo esc3;
 float escControlVec[4];
 
-// Interrupt flag for MPU 9250 (??)
+// Interrupt flag for MPU 9250
 volatile bool intFlag_MPU9250 = false;
 
 int accel_range = 16;// ACC_FULL_SCALE_16_G;
@@ -52,6 +52,9 @@ volatile float radioRecieverVals[NUM_PINS];
 uint8_t latest_interrupted_pin;
 int dumbCounter = 0;
 
+const unsigned long timeout_limit = 100000;
+const float deg2rad = PI / 180.0f;
+
 // #######################################################################
 void setup() {
   // Setup Serial Comms
@@ -78,21 +81,34 @@ void setup() {
 
   pinMode(LED_STABLE, OUTPUT);
 
-  while(millis()<1000){}
 
   // set integration time by time elapsed since last filter update
   Now = micros();
   deltat = ((Now - lastUpdate)/1000000.0f);
   lastUpdate = Now;
 
-//  //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
-//  //  MadgwickQuaternionUpdate(a, g, m);
-//  //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
-//    MahonyQuaternionUpdate(a, g, m);
-//  }
-  // Start the initial time
-//  t_last = millis()/1000.0f;
-//  delay(1000);
+  while(millis()<1000){
+    read_mpu9250();
+    updateState();
+  }
+
+  while(abs(euler_angles[1])>5){
+    read_mpu9250();
+    updateState();
+    Serial.println("Waiting on PITCH to stabilize...");
+  }
+  while(abs(euler_angles[2])>5){
+    read_mpu9250();
+    updateState();
+    Serial.println("Waiting on ROLL to stabilize...");
+  }
+  Serial.println("--------------------------------------------------");
+  Serial.println("*** PITCH and ROLL have stabilized! ***");
+  Serial.print("Pitch = "); Serial.println(euler_angles[2]);
+  Serial.print("Roll = "); Serial.println(euler_angles[2]);
+  Serial.println("--------------------------------------------------");
+
+  // Remove Bias
 }
 
 // #######################################################################
