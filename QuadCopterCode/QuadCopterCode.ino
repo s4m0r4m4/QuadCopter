@@ -42,9 +42,12 @@ volatile float valLeftThrottle = 0;
 volatile float valRightThrottleUpDown = 0;
 volatile float valRightThrottleLeftRight = 0;
 
+#define pinLeftThrottleLeftRight 8
 #define pinLeftThrottle 9
 #define pinRightThrottleUpDown 10
 #define pinRightThrottleLeftRight 11
+#define pinLeftKnob 2
+#define pinRightKnob 5
 #define NUM_PINS 12 // Number of potential input pins
 volatile unsigned long pwm_val = 0;
 volatile unsigned long prev_times[NUM_PINS]; //

@@ -14,9 +14,9 @@ void calculate_control_vec()
 
   // ----------- PDF state gains -----------
   // Derivitive feedback term
-  const float kD = 0.1045;
+  const float kD = 0.1045*radioRecieverVals[pinLeftKnob]/100.0;
   // Propoortional feedback term
-  const float kP = 2.071;
+  const float kP = 2.071*radioRecieverVals[pinLeftKnob]/100.0;
   // Reference adjustment
   const float Nbar = kP; //0.1118;
   // ---------------------------------------
@@ -80,27 +80,31 @@ void calculate_control_vec()
   }
 
   if (dumbCounter>15){
-    // Serial.print(valLeftThrottle); Serial.print("|\t");
-  //  Serial.print(radioRecieverVals[pinRightThrottleUpDown]*Nbar); Serial.print("\t");
-   Serial.print(pitch*kP); Serial.print("\t");
-  //  Serial.print(radioRecieverVals[pinRightThrottleLeftRight]*Nbar); Serial.print("\t");
-   Serial.print(roll*kP); Serial.print("\t");
-  //  Serial.print("|\t");
-   Serial.print(pitch_rate*kD); Serial.print("\t");
-   Serial.print(roll_rate*kD); Serial.print("\t");
-  //  Serial.print("|\t");
+    Serial.print(valLeftThrottle); Serial.print("|\t");
+    Serial.print(radioRecieverVals[pinLeftKnob]); Serial.print("\t");
+    Serial.print(radioRecieverVals[pinRightKnob]); Serial.print("|\t");
+    Serial.print(radioRecieverVals[pinRightThrottleUpDown]); Serial.print("\t");
+    Serial.print(radioRecieverVals[pinRightThrottleLeftRight]); Serial.print("|\t");
 //
-//  //  Serial.print(pitch_err); Serial.print("\t");
-//  //  Serial.print(roll_err); Serial.print("\t");
-//    // Serial.print(pitch_rate_err); Serial.print("\t");
-//    // Serial.print(roll_rate_err); Serial.print("\t");
-  //  Serial.print(deltaF_pitch); Serial.print("\t");
-  //  Serial.print(deltaF_roll); Serial.print("\t");
-    // Serial.print(thrust2valNonLinear(deltaF_pitch, valLeftThrottle)); Serial.print("\t");
-    // Serial.print(thrust2valNonLinear(deltaF_roll, valLeftThrottle)); Serial.print("\t");
+//   //  Serial.print(pitch*kP); Serial.print("\t");
+//   //  Serial.print(roll*kP); Serial.print("\t");
+//   //  Serial.print("|\t");
+//   //  Serial.print(pitch_rate*kD); Serial.print("\t");
+//   //  Serial.print(roll_rate*kD); Serial.print("\t");
+//   //  Serial.print("|\t");
+// //
+// //  //  Serial.print(pitch_err); Serial.print("\t");
+// //  //  Serial.print(roll_err); Serial.print("\t");
+// //    // Serial.print(pitch_rate_err); Serial.print("\t");
+// //    // Serial.print(roll_rate_err); Serial.print("\t");
+//   //  Serial.print(deltaF_pitch); Serial.print("\t");
+//   //  Serial.print(deltaF_roll); Serial.print("\t");
+    Serial.print(thrust2valNonLinear(deltaF_pitch, valLeftThrottle)-valLeftThrottle); Serial.print("\t");
+    Serial.print(thrust2valNonLinear(deltaF_roll, valLeftThrottle)-valLeftThrottle); Serial.print("\t");
+
     Serial.print("|\t");
    serialPrintArray4(escControlVec);
-   // serialPrintArray(euler_angles);
+//    // serialPrintArray(euler_angles);
    Serial.print("\n");
     dumbCounter = 0;
   } else {

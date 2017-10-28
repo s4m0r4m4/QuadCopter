@@ -27,8 +27,8 @@ void setupRadioReceiver()
     radioRecieverVals[i] = 0.0;
   }
 
-  minIns[pinLeftThrottle] = 1170;
-  maxIns[pinLeftThrottle] = 1850;
+  minIns[pinLeftThrottle] = 1175;
+  maxIns[pinLeftThrottle] = 1810;
   minOuts[pinLeftThrottle] = 0;
   maxOuts[pinLeftThrottle] = 180;
   minIns[pinRightThrottleUpDown] = 1350;
@@ -39,14 +39,26 @@ void setupRadioReceiver()
   maxIns[pinRightThrottleLeftRight] = 1770;
   minOuts[pinRightThrottleLeftRight] = -MAX_ANGLE_COMMAND;
   maxOuts[pinRightThrottleLeftRight] = MAX_ANGLE_COMMAND;
+  minOuts[pinRightKnob] = 0.0;
+  maxOuts[pinRightKnob] = 100.0;
+  minOuts[pinLeftKnob] = 0.0;
+  maxOuts[pinLeftKnob] = 100.0;
+  minIns[pinRightKnob] = 1000;
+  maxIns[pinRightKnob] = 1995;
+  minIns[pinLeftKnob] = 877;
+  maxIns[pinLeftKnob] = 1880;
 
   pinMode(pinLeftThrottle, INPUT);
   pinMode(pinRightThrottleUpDown, INPUT);
   pinMode(pinRightThrottleLeftRight, INPUT);
+  pinMode(pinRightKnob, INPUT);
+  pinMode(pinLeftKnob, INPUT);
 
   PCintPort::attachInterrupt(pinLeftThrottle, &rising, RISING);
   PCintPort::attachInterrupt(pinRightThrottleUpDown, &rising, RISING);
   PCintPort::attachInterrupt(pinRightThrottleLeftRight, &rising, RISING);
+  PCintPort::attachInterrupt(pinRightKnob, &rising, RISING);
+  PCintPort::attachInterrupt(pinLeftKnob, &rising, RISING);
 }
 
 // ###############################################################################################
