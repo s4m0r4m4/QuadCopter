@@ -1,0 +1,5 @@
+{
+    "port": "COM3",
+    "board": "arduino:avr:uno",
+    "sketch": "QuadCopterCode\\QuadCopterCode.ino"
+}
