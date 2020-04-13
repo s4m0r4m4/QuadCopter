@@ -1,5 +1,6 @@
 {
     "port": "COM3",
     "board": "arduino:avr:uno",
-    "sketch": "QuadCopterCode\\QuadCopterCode.ino"
+    "sketch": "QuadCopterCode\\QuadCopterCode.ino",
+    "output": "..\\ArduinoOutput"
 }
