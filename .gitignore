@@ -1,4 +1,5 @@
-.pioenvs
-.piolibdeps
-.clang_complete
-.gcc-flags.json
+src/.pioenvs
+src/.piolibdeps
+src/.clang_complete
+src/.gcc-flags.json
+ArduinoOutput
