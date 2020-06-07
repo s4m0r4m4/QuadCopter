@@ -1,3 +1,12 @@
+These docs need lots of work :)
+
+Long story short - this code is for a 4 rotor quadcopter that uses the MPU-9250 chip for state estimation, and a FlySky FS-CT6B radio for control inputs.
+
+This is my hobby project, it is still very much in work!
+
+
+
+
 MPU-9250
 ========
 
