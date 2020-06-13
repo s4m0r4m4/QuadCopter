@@ -22,61 +22,61 @@ void setupRadioReceiver()
     radioRecieverVals[i] = 0.0;
   }
 
-  minIns[pinLeftThrottle] = 1175;
-  maxIns[pinLeftThrottle] = 1810;
-  minOuts[pinLeftThrottle] = 0;
-  maxOuts[pinLeftThrottle] = 180;
-  minOuts[pinRightThrottleUpDown] = -MAX_ANGLE_COMMAND;
-  maxOuts[pinRightThrottleUpDown] = MAX_ANGLE_COMMAND;
-  minOuts[pinRightThrottleLeftRight] = -MAX_ANGLE_COMMAND;
-  maxOuts[pinRightThrottleLeftRight] = MAX_ANGLE_COMMAND;
-  minOuts[pinRightKnob] = 0.0;
-  maxOuts[pinRightKnob] = 100.0;
-  minOuts[pinLeftKnob] = 0.0;
-  maxOuts[pinLeftKnob] = 100.0;
-  minIns[pinRightKnob] = 1000;
-  maxIns[pinRightKnob] = 1995;
-  minIns[pinLeftKnob] = 877;
-  maxIns[pinLeftKnob] = 1880;
+  minIns[PIN_LEFT_STICK] = 1175;
+  maxIns[PIN_LEFT_STICK] = 1810;
+  minOuts[PIN_LEFT_STICK] = 0;
+  maxOuts[PIN_LEFT_STICK] = 180;
+  minOuts[PIN_RIGHT_STICK_UPDOWN] = -MAX_ANGLE_COMMAND;
+  maxOuts[PIN_RIGHT_STICK_UPDOWN] = MAX_ANGLE_COMMAND;
+  minOuts[PIN_RIGHT_STICK_LEFTRIGHT] = -MAX_ANGLE_COMMAND;
+  maxOuts[PIN_RIGHT_STICK_LEFTRIGHT] = MAX_ANGLE_COMMAND;
+  minOuts[PIN_RIGHT_KNOB] = 0.0;
+  maxOuts[PIN_RIGHT_KNOB] = 100.0;
+  minOuts[PIN_LEFT_KNOB] = 0.0;
+  maxOuts[PIN_LEFT_KNOB] = 100.0;
+  minIns[PIN_RIGHT_KNOB] = 1000;
+  maxIns[PIN_RIGHT_KNOB] = 1995;
+  minIns[PIN_LEFT_KNOB] = 877;
+  maxIns[PIN_LEFT_KNOB] = 1880;
 
-  minIns[pinRightThrottleUpDown] = 1310;
-  maxIns[pinRightThrottleUpDown] = 1820;
-  minIns[pinRightThrottleLeftRight] = 1268;
-  maxIns[pinRightThrottleLeftRight] = 2020;
+  minIns[PIN_RIGHT_STICK_UPDOWN] = 1310;
+  maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820;
+  minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268;
+  maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020;
 
-  pinMode(pinLeftThrottle, INPUT);
-  pinMode(pinRightThrottleUpDown, INPUT);
-  pinMode(pinRightThrottleLeftRight, INPUT);
-  pinMode(pinRightKnob, INPUT);
-  pinMode(pinLeftKnob, INPUT);
+  pinMode(PIN_LEFT_STICK, INPUT);
+  pinMode(PIN_RIGHT_STICK_UPDOWN, INPUT);
+  pinMode(PIN_RIGHT_STICK_LEFTRIGHT, INPUT);
+  pinMode(PIN_RIGHT_KNOB, INPUT);
+  pinMode(PIN_LEFT_KNOB, INPUT);
 
   // Wait while calibration data is collected
   // Serial.println("Gathering data from radio receiver for calibration...");
-  // PCintPort::attachInterrupt(pinLeftThrottle, &rising_calibration, RISING);
-  // PCintPort::attachInterrupt(pinRightThrottleUpDown, &rising_calibration, RISING);
-  // PCintPort::attachInterrupt(pinRightThrottleLeftRight, &rising_calibration, RISING);
-  // PCintPort::attachInterrupt(pinRightKnob, &rising_calibration, RISING);
-  // PCintPort::attachInterrupt(pinLeftKnob, &rising_calibration, RISING);
+  // PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising_calibration, RISING);
+  // PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising_calibration, RISING);
+  // PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising_calibration, RISING);
+  // PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising_calibration, RISING);
+  // PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising_calibration, RISING);
 
   // int iii = 0;
   // while (iii<10000) {iii++; Serial.print(iii);}
   // delay(100);
 
   // Calibrate
-  Serial.print("Avg Val (RightUpDown) = "); Serial.println(pwm_val_array[pinRightThrottleUpDown]);
-  Serial.print("Avg Val (RightLeftRight) = "); Serial.println(pwm_val_array[pinRightThrottleLeftRight]);
-  minIns[pinRightThrottleUpDown] = 1310; //constrain(pwm_val_array[pinRightThrottleUpDown] - RADIO_STICK_DIFF, 1000, 1600);
-  maxIns[pinRightThrottleUpDown] = 1820; //constrain(pwm_val_array[pinRightThrottleUpDown] + RADIO_STICK_DIFF, 1610, 2000); // = 1820;
-  minIns[pinRightThrottleLeftRight] = 1268; //constrain(pwm_val_array[pinRightThrottleLeftRight] - RADIO_STICK_DIFF, 1000, 1600); //1268;
-  maxIns[pinRightThrottleLeftRight] = 2020; //constrain(pwm_val_array[pinRightThrottleLeftRight] + RADIO_STICK_DIFF, 1610, 2000); //2020;
+  Serial.print("Avg Val (RightUpDown) = "); Serial.println(pwm_val_array[PIN_RIGHT_STICK_UPDOWN]);
+  Serial.print("Avg Val (RightLeftRight) = "); Serial.println(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT]);
+  minIns[PIN_RIGHT_STICK_UPDOWN] = 1310; //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] - RADIO_STICK_DIFF, 1000, 1600);
+  maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820; //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] + RADIO_STICK_DIFF, 1610, 2000); // = 1820;
+  minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] - RADIO_STICK_DIFF, 1000, 1600); //1268;
+  maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] + RADIO_STICK_DIFF, 1610, 2000); //2020;
 
   // Set up normal interrupts for operation
   Serial.println("Beginning normal radio reciever listener...");
-  PCintPort::attachInterrupt(pinLeftThrottle, &rising, RISING);
-  PCintPort::attachInterrupt(pinRightThrottleUpDown, &rising, RISING);
-  PCintPort::attachInterrupt(pinRightThrottleLeftRight, &rising, RISING);
-  PCintPort::attachInterrupt(pinRightKnob, &rising, RISING);
-  PCintPort::attachInterrupt(pinLeftKnob, &rising, RISING);
+  PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising, RISING);
+  PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising, RISING);
+  PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising, RISING);
+  PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising, RISING);
+  PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising, RISING);
 }
 
 // --------------------------------------------------------------------
@@ -108,7 +108,7 @@ void rising()
   latest_interrupted_pin = PCintPort::arduinoPin;
   PCintPort::attachInterrupt(latest_interrupted_pin, &falling, FALLING);
   prev_times[latest_interrupted_pin] = micros();
-  // if (latest_interrupted_pin==pinLeftThrottle){
+  // if (latest_interrupted_pin==PIN_LEFT_STICK){
   //   Serial.print("| Interrupt = ");
   //   Serial.print(prev_times[latest_interrupted_pin]);
   //   Serial.print("\t");
@@ -132,7 +132,7 @@ void falling() {
   // if (latest_interrupted_pin==9){
   // Serial.print("micros="); Serial.print(nowish); Serial.print("\t"); Serial.print("prev_time["); Serial.print(latest_interrupted_pin); Serial.print("]=");
   // Serial.print(prev_times[latest_interrupted_pin]); Serial.print("\t");
-  // if (latest_interrupted_pin==pinRightThrottleLeftRight){
+  // if (latest_interrupted_pin==PIN_RIGHT_STICK_LEFTRIGHT){
   //   Serial.print("pwm_val = "); Serial.print(pwm_val); Serial.print("/"); Serial.println(scaled_val);
   // }
   // }
@@ -156,7 +156,7 @@ void falling_calibration() {
   // if (latest_interrupted_pin==9){
   // Serial.print("micros="); Serial.print(nowish); Serial.print("\t"); Serial.print("prev_time["); Serial.print(latest_interrupted_pin); Serial.print("]=");
   // Serial.print(prev_times[latest_interrupted_pin]); Serial.print("\t");
-  // if (latest_interrupted_pin==pinRightThrottleLeftRight){
+  // if (latest_interrupted_pin==PIN_RIGHT_STICK_LEFTRIGHT){
   //   Serial.print("pwm_val = "); Serial.print(pwm_val); Serial.print("/"); Serial.println(scaled_val);
   // }
   // }

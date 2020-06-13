@@ -16,7 +16,9 @@ void serialPrintArrayLn(float *vec){
   serialPrintArray(vec); Serial.print("\n");
 }
 
-// ###############################################################################################
+/**************************************************************
+ * Function: readAccelData
+**************************************************************/
 void readAccelData(float *accel_vec) //
 {
   uint8_t rawData[6];  // x/y/z accel register data stored here
