@@ -13,12 +13,12 @@ This is my hobby project, it is still very much in work!
 
 # Hardware Setup
 ## MPU-9250
- VCC ---------------------- 3.3V
- SDA ----------------------- A4
- SCL ----------------------- A5
- GND ---------------------- GND
- 10 kOhm resistor from 3.3V to SDA
- 10 kOhm resistor from 3.3V to SCL
+ - VCC ---------------------- 3.3V
+ - SDA ----------------------- A4
+ - SCL ----------------------- A5
+ - GND ---------------------- GND
+ - 10 kOhm resistor from 3.3V to SDA
+ - 10 kOhm resistor from 3.3V to SCL
  
  ## Radio (FlySky FS-CT6) Setup
   TODO: Show pic
