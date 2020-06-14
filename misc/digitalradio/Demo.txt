@@ -1,8 +1,0 @@
-In this demo version the following features have been removed:
-- Open Selection
-- Export Settings
-- Export Excel/Calc
-- Calibration
-- Print Settings
-
-To install the software just copy the files in a folder and create a shortcut for DigitalRadio.exe
