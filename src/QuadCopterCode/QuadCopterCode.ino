@@ -5,7 +5,17 @@
 #include <Servo.h>
 // #include <Plotter.h>
 
+/**************************************************************
+ * Pin outs for radio and LED indicator
+**************************************************************/
 #define LED_STABLE 8
+// #define PIN_LEFT_STICK_LEFTRIGHT 8???
+#define PIN_LEFT_STICK 9
+#define PIN_RIGHT_STICK_UPDOWN 10
+#define PIN_RIGHT_STICK_LEFTRIGHT 11
+#define PIN_LEFT_KNOB 2
+#define PIN_RIGHT_KNOB 5
+#define NUM_PINS 12 // Number of potential input pins
 
 Servo esc0;
 Servo esc1;
@@ -47,14 +57,6 @@ volatile float valLeftThrottle = 0;
 volatile float valRightThrottleUpDown = 0;
 volatile float valRightThrottleLeftRight = 0;
 
-// Radio Receiver Calibration Values
-#define PIN_LEFT_STICK_LEFTRIGHT 8
-#define PIN_LEFT_STICK 9
-#define PIN_RIGHT_STICK_UPDOWN 10
-#define PIN_RIGHT_STICK_LEFTRIGHT 11
-#define PIN_LEFT_KNOB 2
-#define PIN_RIGHT_KNOB 5
-#define NUM_PINS 12 // Number of potential input pins
 volatile unsigned long pwm_val = 0;
 volatile unsigned long prev_times[NUM_PINS];
 volatile float radioRecieverVals[NUM_PINS];
@@ -68,12 +70,7 @@ uint8_t latest_interrupted_pin;
 int dumbCounter = 0;
 
 const unsigned long timeout_limit = 100000;
-const float deg2rad = PI / 180.0f;
-
-// Variables for plotting
-// double plot_x;
-// double plot_y;
-// Plotter p; // Also declare plotter as global
+const float DEG2RAD = PI /180.0f;
 
 /**************************************************************
  * Function: setup
@@ -85,9 +82,6 @@ void setup()
     Serial.begin(115200);
 
     Serial.println("INITIALIZING...");
-    I2Cscan(); // TODO remove this
-    //II2C_ClearBus(); // TODO remove this
-    //I2Cscan(); // TODO remove this
 
     // Setup motor control
     esc0.attach(A0); // setup esc0 on pin X
@@ -116,11 +110,12 @@ void setup()
     delta_time = ((Now - lastUpdate) / 1000000.0f);
     lastUpdate = Now;
 
-    while (millis() < 1000)
-    {
-        read_mpu9250();
-        updateState();
-    }
+    // while (millis() < 1000)
+    // {
+    //     Serial.println("Testing!!!");
+    //     read_mpu9250();
+    //     updateState();
+    // }
 
     Serial.print("Initial Pitch = ");
     Serial.println(euler_angles[1]);
@@ -146,10 +141,6 @@ void setup()
     Serial.println(euler_angles[2]);
     Serial.println("--------------------------------------------------");
 
-    // Set up plotting
-    // p.Begin();
-    // p.AddTimeGraph( "Time graph w/ 500 points", 500, "x label", plot_x );
-    // p.AddTimeGraph( "Time graph w/ 200 points", 200, "x label", plot_x );
 }
 
 /**************************************************************
@@ -157,6 +148,8 @@ void setup()
 **************************************************************/
 void loop()
 {
+    Serial.println("Loop!");
+    delay(500);
 
     read_mpu9250();
     updateState();
@@ -171,5 +164,4 @@ void loop()
     // esc2.write(escControlVec[2]);
     // esc3.write(escControlVec[3]);
 
-    //p.Plot();
 }

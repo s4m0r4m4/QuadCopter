@@ -57,8 +57,8 @@ void calculateControlVector()
     {
         desired_pitch = -radioRecieverVals[PIN_RIGHT_STICK_UPDOWN];
         // if desired_pitch<
-        pitch_err = (-radioRecieverVals[PIN_RIGHT_STICK_UPDOWN] - pitch) * deg2rad;
-        roll_err = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * deg2rad;
+        pitch_err = (-radioRecieverVals[PIN_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
+        roll_err = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
         // if euler_angles[1] is high, push on A3 and A0
         // if euler_angles[2] is high, push on A1 and A0
         //   pitch_err = radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]-euler_angles[1];
@@ -68,8 +68,8 @@ void calculateControlVector()
 
         // --- LQR Controller design ---
         // u = Nbar*r - K*x
-        // deltaF_pitch = (radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]*Nbar - pitch*kP)*deg2rad + (0.0f*Nbar - pitch_rate*kD)*deg2rad;
-        // deltaF_roll = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]*Nbar - roll*kP)*deg2rad + (0.0f*Nbar - roll_rate*kD)*deg2rad;
+        // deltaF_pitch = (radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]*Nbar - pitch*kP)*DEG2RAD + (0.0f*Nbar - pitch_rate*kD)*DEG2RAD;
+        // deltaF_roll = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]*Nbar - roll*kP)*DEG2RAD + (0.0f*Nbar - roll_rate*kD)*DEG2RAD;
         // ------------------------------
 
         // ------------------------------
@@ -79,15 +79,15 @@ void calculateControlVector()
     {
 
         // --- PD Controller design ---
-        // deltaF_pitch_old = pitch_err*kP + (0.0f - pitch_rate)*deg2rad*kD;
-        // deltaF_roll_old = roll_err*kP + (0.0f - roll_rate)*deg2rad*kD;
+        // deltaF_pitch_old = pitch_err*kP + (0.0f - pitch_rate)*DEG2RAD*kD;
+        // deltaF_roll_old = roll_err*kP + (0.0f - roll_rate)*DEG2RAD*kD;
 
         // --- PID Controller design w/ integrator limit ---
         scale_val = min(1.0, (valLeftThrottle / 100.0) * (valLeftThrottle / 100.0));
         integrated_pitch_err = constrain(integrated_pitch_err + pitch_err * delta_time, -0.25, 0.25); // TODO - is this the right delta_time (used for estimators...)
         integrated_roll_err = constrain(integrated_roll_err + roll_err * delta_time, -0.25, 0.25);    // TODO - is this the right delta_time (used for estimators...)
-        deltaF_pitch = pitch_err * kP + (0.0f - pitch_rate) * deg2rad * kD + integrated_pitch_err * kI * scale_val;
-        deltaF_roll = roll_err * kP + (0.0f - roll_rate) * deg2rad * kD + integrated_roll_err * kI * scale_val;
+        deltaF_pitch = pitch_err * kP + (0.0f - pitch_rate) * DEG2RAD * kD + integrated_pitch_err * kI * scale_val;
+        deltaF_roll = roll_err * kP + (0.0f - roll_rate) * DEG2RAD * kD + integrated_roll_err * kI * scale_val;
 
         escControlVec[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
         escControlVec[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, valLeftThrottle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;

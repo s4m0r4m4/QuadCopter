@@ -193,7 +193,7 @@
 #define ZA_OFFSET_H 0x7D
 #define ZA_OFFSET_L 0x7E
 
-#define MPU9250_ADDRESS 0x68 // Could also be 0x69 I guess?
+#define MPU9250_ADDRESS 0x68 // Can be 0x68 or 0x69
 
 #define ACCEL_FCHOICE 0x01 // to enable digital low-pass filter
 #define A_DLPF_CFG_460Hz \
@@ -209,6 +209,8 @@
 #define GYRO_DLPF_CFG_184HZ 0x01
 #define GYRO_DLPF_CFG_92HZ 0x02
 #define GYRO_DLPF_CFG_41HZ 0x03
+
+#define WHO_AM_I_EXPECTED 0x73
 
 // -------------------------------------------------------------------------------------------------
 
@@ -413,14 +415,13 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
                       WHO_AM_I_MPU9250); // Read WHO_AM_I register for MPU-9250
     if (SerialDebug)
     {
-        Serial.print("MPU9250 ");
-        Serial.print("I AM ");
+        Serial.print("MPU9250 I AM");
         Serial.print(c, HEX);
         Serial.print(" I should be ");
-        Serial.println(0x71, HEX);
+        Serial.println(WHO_AM_I_EXPECTED, HEX);
     }
 
-    if (c == 0x71) // WHO_AM_I should always be 0x71
+    if (c == WHO_AM_I_EXPECTED) // WHO_AM_I should always be 0x71
     {
         if (SerialDebug)
         {
@@ -472,8 +473,7 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
                           WHO_AM_I_AK8963); // Read WHO_AM_I register for AK8963
         if (SerialDebug)
         {
-            Serial.print("AK8963 ");
-            Serial.print("I AM ");
+            Serial.print("AK8963 I AM ");
             Serial.print(d, HEX);
             Serial.print(" I should be ");
             Serial.println(0x48, HEX);
@@ -504,6 +504,11 @@ void setup_mpu9250(int accel_range, int gyro_range, int mag_bits, int gyro_dlfp,
     {
         Serial.print("Could not connect to MPU9250: 0x");
         Serial.println(c, HEX);
+        
+        I2Cscan(); // TODO remove this
+        //II2C_ClearBus(); // TODO remove this
+        //I2Cscan(); // TODO remove this
+        
         //    while(1) ; // Loop forever if communication doesn't happen
     }
 
