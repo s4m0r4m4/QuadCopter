@@ -1,6 +1,98 @@
-#include <Arduino.h>
 
+#include <Arduino.h>
 #include <math.h>
+#include <serial_printing.h>
+#include <mpu9250_sensors.h>
+
+/**************************************************************
+ * Variables
+**************************************************************/
+uint32_t lastUpdate = 0; //, firstUpdate = 0; // used to calculate integration interval
+uint32_t Now = 0;        // used to calculate integration interval
+
+float x[3]; // Linear position: x, y, z
+float v[3]; // inear velocity: vx, vy, vz
+
+/**************************************************************
+ * Function: updateState
+**************************************************************/
+void updateState(float *a, float *g, float *m)
+{
+    float delta_time = 0.0f; // integration interval for both filter schemes
+
+    float pitch, yaw, roll;
+
+    Now = micros();
+    delta_time = ((Now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
+    lastUpdate = Now;
+
+    //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
+    //  MadgwickQuaternionUpdate(a, g, m);
+    //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
+    MahonyQuaternionUpdate(a, g, m, delta_time);
+
+    adjustAccelData(a, q, delta_time);
+
+    // Define output variables from updated quaternion---these are Tait-Bryan angles, commonly used in aircraft orientation.
+    // In this coordinate system, the positive z-axis is down toward Earth.
+    // Yaw is the angle between Sensor x-axis and Earth magnetic North (or true North if corrected for local declination, looking down on the sensor positive yaw is counterclockwise.
+    // Pitch is angle between sensor x-axis and Earth ground plane, toward the Earth is positive, up toward the sky is negative.
+    // Roll is angle between sensor y-axis and Earth ground plane, y-axis up is positive roll.
+    // These arise from the definition of the homogeneous rotation matrix constructed from quaternions.
+    // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
+    // applied in the correct order which for this configuration is yaw, pitch, and then roll.
+    // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
+    yaw = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    roll = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    pitch *= 180.0f / PI;
+    yaw *= 180.0f / PI;
+    yaw -= 12.2; // Declination at Burbank, California is 12.2 degrees
+                 ////      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
+    roll *= 180.0f / PI;
+
+    // Set gloabl variables
+    euler_angles[0] = yaw;
+    euler_angles[1] = roll;
+    euler_angles[2] = pitch;
+
+    if ((roll < 5) && (roll > -5) && (pitch < 5) && (pitch > -5))
+    {
+        digitalWrite(LED_STABLE, HIGH);
+    }
+    else
+    {
+        digitalWrite(LED_STABLE, LOW);
+    }
+    digitalWrite(LED_STABLE, HIGH);
+
+    // float v_avg = 0;
+    float cutoff = 0.1;
+
+    //if (Now>5200000){
+    for (int j = 0; j < 3; j++)
+    {
+        //v_avg = 1.0/2.0*(v[j] + (v[j] + a[j]*delta_time));
+        if (abs(a[j]) > cutoff)
+        {
+            v[j] = v[j] + a[j] * delta_time;
+        }
+        if (abs(v[j]) > cutoff)
+        {
+            x[j] = x[j] + v[j] * delta_time;
+            //x[j] += v_avg*delta_time;
+        }
+    }
+
+    //  Serial.print(Now); Serial.print("\t");
+    // serialPrintArray(a);
+    // serialPrintArray(g);
+    // serialPrintArray(m);
+    //  serialPrintArray(v);
+    //  serialPrintArrayLn(x);
+    //  serialPrintArray(q);
+    serialPrintArrayLn(euler_angles);
+}
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
 // (see http://www.x-io.co.uk/category/open-source/ for examples and more details)
@@ -9,21 +101,21 @@
 // The performance of the orientation filter is at least as good as conventional Kalman-based filtering algorithms
 // but is much less computationally intensive---it can be performed on a 3.3 V Pro Mini operating at 8 MHz!
 //void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
-void MadgwickQuaternionUpdate(float *a, float *g, float *m)
+void MadgwickQuaternionUpdate(float *a, float *g, float *m, float delta_time)
 {
     float ax = a[0];
     float ay = a[1];
     float az = a[2];
 
-    float gx = g[0]*PI/180.0f; // Pass gyro rate as rad/s
-    float gy = g[1]*PI/180.0f;
-    float gz = g[2]*PI/180.0f;
+    float gx = g[0] * PI / 180.0f; // Pass gyro rate as rad/s
+    float gy = g[1] * PI / 180.0f;
+    float gz = g[2] * PI / 180.0f;
 
     float mx = m[1]; //switch mx and my
     float my = m[0]; //switch mx and my
     float mz = m[2];
 
-    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
+    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3]; // short name local variable for readability
     float norm;
     float hx, hy, _2bx, _2bz;
     float s1, s2, s3, s4;
@@ -55,16 +147,18 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
 
     // Normalise accelerometer measurement
     norm = sqrt(ax * ax + ay * ay + az * az);
-    if (norm == 0.0f) return; // handle NaN
-    norm = 1.0f/norm;
+    if (norm == 0.0f)
+        return; // handle NaN
+    norm = 1.0f / norm;
     ax *= norm;
     ay *= norm;
     az *= norm;
 
     // Normalise magnetometer measurement
     norm = sqrt(mx * mx + my * my + mz * mz);
-    if (norm == 0.0f) return; // handle NaN
-    norm = 1.0f/norm;
+    if (norm == 0.0f)
+        return; // handle NaN
+    norm = 1.0f / norm;
     mx *= norm;
     my *= norm;
     mz *= norm;
@@ -86,8 +180,8 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
     s2 = _2q4 * (2.0f * q2q4 - _2q1q3 - ax) + _2q1 * (2.0f * q1q2 + _2q3q4 - ay) - 4.0f * q2 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - az) + _2bz * q4 * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (_2bx * q3 + _2bz * q1) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + (_2bx * q4 - _4bz * q2) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
     s3 = -_2q1 * (2.0f * q2q4 - _2q1q3 - ax) + _2q4 * (2.0f * q1q2 + _2q3q4 - ay) - 4.0f * q3 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - az) + (-_4bx * q3 - _2bz * q1) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (_2bx * q2 + _2bz * q4) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + (_2bx * q1 - _4bz * q3) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
     s4 = _2q2 * (2.0f * q2q4 - _2q1q3 - ax) + _2q3 * (2.0f * q1q2 + _2q3q4 - ay) + (-_4bx * q4 + _2bz * q2) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - mx) + (-_2bx * q1 + _2bz * q3) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - my) + _2bx * q2 * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mz);
-    norm = sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4);    // normalise step magnitude
-    norm = 1.0f/norm;
+    norm = sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4); // normalise step magnitude
+    norm = 1.0f / norm;
     s1 *= norm;
     s2 *= norm;
     s3 *= norm;
@@ -104,60 +198,57 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m)
     q2 += qDot2 * delta_time;
     q3 += qDot3 * delta_time;
     q4 += qDot4 * delta_time;
-    norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);    // normalise quaternion
-    norm = 1.0f/norm;
+    norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4); // normalise quaternion
+    norm = 1.0f / norm;
     q[0] = q1 * norm;
     q[1] = q2 * norm;
     q[2] = q3 * norm;
     q[3] = q4 * norm;
-
 }
 
+// Similar to Madgwick scheme but uses proportional and integral filtering on the error between estimated reference vectors and
+// measured ones.
 
-
- // Similar to Madgwick scheme but uses proportional and integral filtering on the error between estimated reference vectors and
- // measured ones.
-
-    // Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
-  // the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
-  // We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
-  // For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
-  // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
+// Sensors x (y)-axis of the accelerometer is aligned with the y (x)-axis of the magnetometer;
+// the magnetometer z-axis (+ down) is opposite to z-axis (+ up) of accelerometer and gyro!
+// We have to make some allowance for this orientationmismatch in feeding the output to the quaternion filter.
+// For the MPU-9250, we have chosen a magnetic rotation that keeps the sensor forward along the x-axis just like
+// in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
 
 //void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
-void MahonyQuaternionUpdate(float *a, float *g, float *m)
+void MahonyQuaternionUpdate(float *a, float *g, float *m, float delta_time)
 {
 
-//    MadgwickQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f, gx*PI/180.0f,
-//-gz*PI/180.0f,  mx,  my, mz);
-//  if(passThru)MahonyQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f,
-//gx*PI/180.0f, -gz*PI/180.0f,  mx,  my, mz);
+    //    MadgwickQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f, gx*PI/180.0f,
+    //-gz*PI/180.0f,  mx,  my, mz);
+    //  if(passThru)MahonyQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f,
+    //gx*PI/180.0f, -gz*PI/180.0f,  mx,  my, mz);
 
-//    float ax = -a[1];
-//    float ay = -a[0];
-//    float az = a[2];
-//
-//    float gx = g[1]*PI/180.0f; // Pass gyro rate as rad/s
-//    float gy = g[0]*PI/180.0f;
-//    float gz = -g[2]*PI/180.0f;
-//
-//    float mx = m[0];
-//    float my = m[1];
-//    float mz = m[2];
+    //    float ax = -a[1];
+    //    float ay = -a[0];
+    //    float az = a[2];
+    //
+    //    float gx = g[1]*PI/180.0f; // Pass gyro rate as rad/s
+    //    float gy = g[0]*PI/180.0f;
+    //    float gz = -g[2]*PI/180.0f;
+    //
+    //    float mx = m[0];
+    //    float my = m[1];
+    //    float mz = m[2];
 
     float ax = a[0];
     float ay = a[1];
     float az = a[2];
 
-    float gx = g[0]*PI/180.0f; // Pass gyro rate as rad/s
-    float gy = g[1]*PI/180.0f;
-    float gz = g[2]*PI/180.0f;
+    float gx = g[0] * PI / 180.0f; // Pass gyro rate as rad/s
+    float gy = g[1] * PI / 180.0f;
+    float gz = g[2] * PI / 180.0f;
 
     float mx = m[1];
     float my = m[0];
     float mz = -m[2];
 
-    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
+    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3]; // short name local variable for readability
     float norm;
     float hx, hy, bx, bz;
     float vx, vy, vz, wx, wy, wz;
@@ -178,16 +269,18 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
 
     // Normalise accelerometer measurement
     norm = sqrt(ax * ax + ay * ay + az * az);
-    if (norm == 0.0f) return; // handle NaN
-    norm = 1.0f / norm;        // use reciprocal for division
+    if (norm == 0.0f)
+        return;         // handle NaN
+    norm = 1.0f / norm; // use reciprocal for division
     ax *= norm;
     ay *= norm;
     az *= norm;
 
     // Normalise magnetometer measurement
     norm = sqrt(mx * mx + my * my + mz * mz);
-    if (norm == 0.0f) return; // handle NaN
-    norm = 1.0f / norm;        // use reciprocal for division
+    if (norm == 0.0f)
+        return;         // handle NaN
+    norm = 1.0f / norm; // use reciprocal for division
     mx *= norm;
     my *= norm;
     mz *= norm;
@@ -212,13 +305,13 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
     ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
     if (Ki > 0.0f)
     {
-        eInt[0] += ex;      // accumulate integral error
-        eInt[1] += ey;      // missing delta_time? I guess thats fine as long as its taken into account in K_i
+        eInt[0] += ex; // accumulate integral error
+        eInt[1] += ey; // missing delta_time? I guess thats fine as long as its taken into account in K_i
         eInt[2] += ez;
     }
     else
     {
-        eInt[0] = 0.0f;     // prevent integral wind up
+        eInt[0] = 0.0f; // prevent integral wind up
         eInt[1] = 0.0f;
         eInt[2] = 0.0f;
     }
@@ -244,5 +337,4 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m)
     q[1] = q2 * norm;
     q[2] = q3 * norm;
     q[3] = q4 * norm;
-
 }
