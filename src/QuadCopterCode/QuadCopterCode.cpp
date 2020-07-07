@@ -20,15 +20,11 @@ float escControlVec[4];
 volatile bool intFlag_MPU9250 = false;
 
 // Timer
-// volatile float t_last;
-const float update_state_deltaT = 1000000;
-uint32_t lastUpdate = 0; //, firstUpdate = 0; // used to calculate integration interval
+uint32_t lastUpdate = 0; // used to calculate integration interval
 
-float euler_angles[3];                 // yaw, pitch, roll (3-2-1)
-float a[3], g[3], m[3];                // variables to hold latest sensor data values
+float euler_angles[3]; // yaw, pitch, roll (3-2-1)
+
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
-
-const unsigned long RADIO_STICK_DIFF = 370;
 
 // initialize global junk
 volatile float valLeftThrottle = 0;
@@ -104,6 +100,7 @@ void setup()
 **************************************************************/
 void loop()
 {
+    float a[3], g[3], m[3]; // variables to hold latest sensor data values
 
     // integration interval for both filter schemes
     uint32_t Now = micros();

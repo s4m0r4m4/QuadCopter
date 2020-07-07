@@ -11,6 +11,8 @@
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \
     }
 
+#define RADIO_STICK_DIFF = 370;
+
 const float factor = 1.0;
 float timeout = 32000;
 float scaled_val;

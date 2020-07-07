@@ -77,16 +77,12 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     yaw = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
     pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
     roll = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-    pitch *= 180.0f / PI;
-    yaw *= 180.0f / PI;
-    yaw -= 12.2; // Declination at Burbank, California is 12.2 degrees
-                 ////      yaw   -= 13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-    roll *= 180.0f / PI;
+    yaw -= 0.2; // 12.2; // Declination at Burbank, California is 12.2 degrees
 
-    // Set gloabl variables
-    euler_angles[0] = yaw;
-    euler_angles[1] = roll;
-    euler_angles[2] = pitch;
+    // Set gloabl variables (as degrees)
+    euler_angles[0] = yaw / DEG2RAD;
+    euler_angles[1] = roll / DEG2RAD;
+    euler_angles[2] = pitch / DEG2RAD;
 
     if ((roll < 5) && (roll > -5) && (pitch < 5) && (pitch > -5))
     {

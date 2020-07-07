@@ -68,8 +68,6 @@ void adjustAccelData(float *accel_vec, float *quat)
     float Q_ab[3] = {q1q1 - q2q2 - q3q3 + q4q4, 2 * (q1q2 + q3q4), 2 * (q1q3 - q2q4)};
     //  float q_star[4] = {q[0], -q[1], -q[2], -q[3]};
 
-    //  Serial.println(sqrt((2*(q1q3-q2q4))*(2*(q1q3-q2q4)) + (2*(q2q3+q1q4))*(2*(q2q3+q1q4)) + (-q1q1-q2q2+q3q3+q4q4)*(-q1q1-q2q2+q3q3+q4q4)));
-
     float new_g[3];
     for (int i = 0; i < 3; i++)
     {

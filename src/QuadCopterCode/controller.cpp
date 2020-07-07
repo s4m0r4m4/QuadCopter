@@ -28,7 +28,6 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
 
     // Reference adjustment
     const float Nbar = kP; //0.1118;
-    const float DEG2RAD = PI / 180.0f;
     // ---------------------------------------
 
     float pitch = 0.0;

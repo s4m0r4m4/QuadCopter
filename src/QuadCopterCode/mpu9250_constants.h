@@ -1,5 +1,8 @@
 #include <Arduino.h>
 
+#ifndef MPU9250_CONSTANTS_H
+#define MPU9250_CONSTANTS_H
+
 // See also MPU-9250 Register Map and Descriptions, Revision 4.0,
 // RM-MPU-9250A-00, Rev. 1.4, 9/9/2013 for registers not listed in
 // above document; the MPU9250 and MPU9150 are virtually identical but the
@@ -181,3 +184,5 @@
 
 #define AHRS true        // set to false for basic data read
 #define SerialDebug true // set to true to get Serial output for debugging
+
+#endif
