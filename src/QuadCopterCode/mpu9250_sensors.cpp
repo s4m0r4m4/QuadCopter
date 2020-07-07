@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <mpu9250_constants.h>
+#include <mpu9250_sensors.h>
 
 /**************************************************************
  * Function: readAccelData
@@ -129,14 +130,6 @@ void readMagData(float *mag_vec, float mag_res, float *magCalibration) //int16_t
     mag_vec[0] = (float)tmp[0] * mag_res * magCalibration[0] - magbias[0]; // get actual magnetometer value, this depends on scale being set
     mag_vec[1] = (float)tmp[1] * mag_res * magCalibration[1] - magbias[1];
     mag_vec[2] = (float)tmp[2] * mag_res * magCalibration[2] - magbias[2];
-}
-
-// ###############################################################################################
-int16_t readTempData()
-{
-    uint8_t rawData[2];                                     // x/y/z gyro register data stored here
-    readBytes(MPU9250_ADDRESS, TEMP_OUT_H, 2, &rawData[0]); // Read the two raw data registers sequentially into data array
-    return ((int16_t)rawData[0] << 8) | rawData[1];         // Turn the MSB and LSB into a 16-bit value
 }
 
 // ###############################################################################################

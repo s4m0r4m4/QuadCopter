@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <mpu9250_constants.h>
 
 /**************************************************************
  * Function: readAccelData

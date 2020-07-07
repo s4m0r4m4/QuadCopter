@@ -5,11 +5,11 @@
 #include <mpu9250_code.h>
 #include <state_estimator.h>
 #include <quadcopter_constants.h>
+#include <global_junk.h>
 
 /**************************************************************
  * Pin outs for radio and LED indicator
 **************************************************************/
-
 Servo esc0;
 Servo esc1;
 Servo esc2;
@@ -22,26 +22,20 @@ volatile bool intFlag_MPU9250 = false;
 // Timer
 // volatile float t_last;
 const float update_state_deltaT = 1000000;
+uint32_t lastUpdate = 0; //, firstUpdate = 0; // used to calculate integration interval
+
 float euler_angles[3];                 // yaw, pitch, roll (3-2-1)
 float a[3], g[3], m[3];                // variables to hold latest sensor data values
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
-float eInt[3] = {
-    0.0f, 0.0f,
-    0.0f};                         // vector to hold integral error for estimator Mahony method
-float integrated_pitch_err = 0.0f; // integral error for Controller
-float integrated_roll_err = 0.0f;  // integral error for Controller
 
+const unsigned long RADIO_STICK_DIFF = 370;
+
+// initialize global junk
 volatile float valLeftThrottle = 0;
 volatile float valRightThrottleUpDown = 0;
 volatile float valRightThrottleLeftRight = 0;
-
-volatile unsigned long prev_times[NUM_PINS];
-volatile float radioRecieverVals[NUM_PINS];
-unsigned long RADIO_STICK_DIFF = 370;
-int dumbCounter = 0;
-
-const unsigned long timeout_limit = 100000;
-const float DEG2RAD = PI / 180.0f;
+float integrated_pitch_err = 0.0f; // integral error for Controller
+float integrated_roll_err = 0.0f;  // integral error for Controller
 
 /**************************************************************
  * Function: setup
@@ -110,16 +104,23 @@ void setup()
 **************************************************************/
 void loop()
 {
+
+    // integration interval for both filter schemes
+    uint32_t Now = micros();
+    float delta_time = ((Now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
+    lastUpdate = Now;
+
     Serial.println("Loop!");
     delay(500);
 
     read_mpu9250(a, g, m);
-    updateState(a, g, m);
+    updateState(a, g, m, q, delta_time, euler_angles);
 
     // readRecieverData();
     // delay(50);
 
-    // calculateControlVector();
+    // TODO: merge euler and g into single state vector!!!
+    // calculateControlVector(euler_angles, g, escControlVec, delta_time);
 
     // esc0.write(escControlVec[0]);
     // esc1.write(escControlVec[1]);

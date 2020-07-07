@@ -2,6 +2,8 @@
 //#include <EnableInterrupt.h>
 #include <PinChangeInt.h> //http://www.benripley.com/diy/arduino/three-ways-to-read-a-pwm-signal-with-arduino/
 #include <quadcopter_constants.h>
+#include <global_junk.h>
+#include <receive_radio_signal.h>
 
 #define MAX_ANGLE_COMMAND 10
 #define ZEROS_ALL_PINS                     \
@@ -96,7 +98,7 @@ void setupRadioReceiver()
 
 float runningAverage(int M, int latest_interrupted_pin)
 {
-    #define LM_SIZE 15
+#define LM_SIZE 15
     static int LM[LM_SIZE][NUM_PINS]; // LastMeasurements
     static byte index[NUM_PINS] = ZEROS_ALL_PINS;
     static long sum[NUM_PINS] = ZEROS_ALL_PINS;
@@ -167,7 +169,7 @@ void rising_calibration()
 // For PWM reading on multiple channels
 void falling_calibration()
 {
-    
+
     uint8_t latest_interrupted_pin = PCintPort::arduinoPin; // Get the pin #
     PCintPort::attachInterrupt(latest_interrupted_pin, &rising_calibration, RISING);
     pwm_val_array[latest_interrupted_pin] = micros() - prev_times[latest_interrupted_pin]; //runningAverage(, latest_interrupted_pin);

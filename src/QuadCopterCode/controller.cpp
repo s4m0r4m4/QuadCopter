@@ -1,9 +1,14 @@
 #include <Arduino.h>
+#include <quadcopter_constants.h>
+#include <controller.h>
+#include <global_junk.h>
+
+int dumbCounter = 0;
 
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void calculateControlVector()
+void calculateControlVector(float *euler_angles, float *g, float *escControlVec, float delta_time)
 {
     // ----------- LQR state gains -----------
     // // Derivitive feedback term
@@ -23,6 +28,7 @@ void calculateControlVector()
 
     // Reference adjustment
     const float Nbar = kP; //0.1118;
+    const float DEG2RAD = PI / 180.0f;
     // ---------------------------------------
 
     float pitch = 0.0;
@@ -147,6 +153,8 @@ void calculateControlVector()
 **************************************************************/
 bool checkForActiveSignal()
 {
+
+    const unsigned long timeout_limit = 100000;
     // Serial.print("| ControllerCheck = ");
     // Serial.print(prev_times[PIN_LEFT_STICK]); Serial.print("\t");
     // Serial.print("| micros()-prev_times = ");
@@ -183,8 +191,8 @@ float thrustToMotorValLinear(float deltaThrust, float val0)
 
 // ---------- Nonlinear transformation from desired force to motor command val ------------
 const float valMin = -30.0;
-const float linToQuad = 40.0;  // value at which the curve-fit transitions from linear to quadratic
-const float forceAtLinToQuad = 0.15;  // pseudo-force when motors are driven with a value at the switch from linear to quadratic
+const float linToQuad = 40.0;        // value at which the curve-fit transitions from linear to quadratic
+const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
 const float maxThrustOverVal = (3.5 - forceAtLinToQuad) / ((180.0 - linToQuad) * (180.0 - linToQuad));
 
 /**************************************************************
