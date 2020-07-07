@@ -1,0 +1,63 @@
+{
+    "configurations": [
+        {
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "c:/Users/schr0/Documents/QuadCopter/src/include",
+                "c:/Users/schr0/Documents/QuadCopter/src/QuadCopterCode",
+                "c:/Users/schr0/Documents/QuadCopter/src/lib/PinChangeInt",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                "C:/Users/schr0/.platformio/lib/Servo_ID883/src",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/variants/standard",
+                "c:/Users/schr0/Documents/QuadCopter/src/lib/EnableInterrupt",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                "C:/Users/schr0/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "c:/Users/schr0/Documents/QuadCopter/src/include",
+                    "c:/Users/schr0/Documents/QuadCopter/src/QuadCopterCode",
+                    "c:/Users/schr0/Documents/QuadCopter/src/lib/PinChangeInt",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                    "C:/Users/schr0/.platformio/lib/Servo_ID883/src",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/cores/arduino",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/variants/standard",
+                    "c:/Users/schr0/Documents/QuadCopter/src/lib/EnableInterrupt",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                    "C:/Users/schr0/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                    "C:/Users/schr0/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=40304",
+                "ARDUINO_AVR_UNO",
+                "F_CPU=16000000L",
+                "ARDUINO_ARCH_AVR",
+                "ARDUINO=10808",
+                "__AVR_ATmega328P__",
+                ""
+            ],
+            "intelliSenseMode": "clang-x64",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "C:/Users/schr0/.platformio/packages/toolchain-atmelavr/bin/avr-gcc.exe",
+            "compilerArgs": [
+                "-mmcu=atmega328p",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
