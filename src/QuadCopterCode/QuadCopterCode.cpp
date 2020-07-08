@@ -42,7 +42,7 @@ void setup()
     // Setup Serial Comms
     Serial.begin(115200);
 
-    Serial.println("INITIALIZING...");
+    Serial.println(F("INITIALIZING..."));
 
     // Setup motor control
     esc0.attach(A0); // setup esc0 on pin X
@@ -70,9 +70,9 @@ void setup()
     //     updateState();
     // }
 
-    Serial.print("Initial Pitch = ");
+    Serial.print(F("Initial Pitch = "));
     Serial.println(euler_angles[1]);
-    Serial.print("Initial Roll = ");
+    Serial.print(F("Initial Roll = "));
     Serial.println(euler_angles[2]);
     // while(abs(euler_angles[1])>2.0){
     //   read_mpu9250();
@@ -86,13 +86,13 @@ void setup()
     //   Serial.print("Waiting on ROLL to stabilize: ");
     //   Serial.println(euler_angles[2]);
     // }
-    Serial.println("--------------------------------------------------");
-    Serial.println("*** PITCH and ROLL have stabilized! ***");
-    Serial.print("Pitch = ");
+    Serial.println(F("--------------------------------------------------"));
+    Serial.println(F("*** PITCH and ROLL have stabilized! ***"));
+    Serial.print(F("Pitch = "));
     Serial.println(euler_angles[1]);
-    Serial.print("Roll = ");
+    Serial.print(F("Roll = "));
     Serial.println(euler_angles[2]);
-    Serial.println("--------------------------------------------------");
+    Serial.println(F("--------------------------------------------------"));
 }
 
 /**************************************************************

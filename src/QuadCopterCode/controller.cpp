@@ -110,30 +110,30 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
 
     if (dumbCounter > 10)
     {
-        // Serial.print(valLeftThrottle); Serial.print("|\t");
-        //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print("\t");
-        //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print("|\t");
+        // Serial.print(valLeftThrottle); Serial.print(F("|\t"));
+        //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print(F("\t"));
+        //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print(F("|\t"));
         Serial.print(radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]);
-        Serial.print("\t");
+        Serial.print(F("\t"));
         Serial.print(radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]);
-        Serial.print("|\t");
-        // Serial.print(pitch); Serial.print("\t");
-        // Serial.print(scale_val); Serial.print("|\t");
+        Serial.print(F("|\t"));
+        // Serial.print(pitch); Serial.print(F("\t"));
+        // Serial.print(scale_val); Serial.print(F("|\t"));
         Serial.print(pitch_err);
-        Serial.print("\t");
-        // Serial.print((0.0f - pitch_rate)); Serial.print("\t");
+        Serial.print(F("\t"));
+        // Serial.print((0.0f - pitch_rate)); Serial.print(F("\t"));
         Serial.print(integrated_pitch_err);
-        Serial.print("\t");
-        // Serial.print(integrated_roll_err); Serial.print("\t");
+        Serial.print(F("\t"));
+        // Serial.print(integrated_roll_err); Serial.print(F("\t"));
         Serial.print(deltaF_pitch);
-        Serial.println("\t");
-        // Serial.print(deltaF_roll*100); Serial.print("\t");
-        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch_old, valLeftThrottle)); Serial.print("\t");
-        // Serial.print(thrustToMotorValNonlinear(deltaF_roll_old, valLeftThrottle)-valLeftThrottle); Serial.print("\t");
-        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch, valLeftThrottle)); Serial.print("\t");
-        // Serial.print(thrustToMotorValNonlinear(deltaF_roll, valLeftThrottle)); Serial.print("\t");
+        Serial.println(F("\t"));
+        // Serial.print(deltaF_roll*100); Serial.print(F("\t"));
+        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch_old, valLeftThrottle)); Serial.print(F("\t"));
+        // Serial.print(thrustToMotorValNonlinear(deltaF_roll_old, valLeftThrottle)-valLeftThrottle); Serial.print(F("\t"));
+        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch, valLeftThrottle)); Serial.print(F("\t"));
+        // Serial.print(thrustToMotorValNonlinear(deltaF_roll, valLeftThrottle)); Serial.print(F("\t"));
 
-        // Serial.print("|\t");
+        // Serial.print(F("|\t"));
         // serialPrintArray4(escControlVec);
         //    // serialPrintArray(euler_angles);
         // Serial.print("\n");
@@ -155,7 +155,7 @@ bool checkForActiveSignal()
 
     const unsigned long timeout_limit = 100000;
     // Serial.print("| ControllerCheck = ");
-    // Serial.print(prev_times[PIN_LEFT_STICK]); Serial.print("\t");
+    // Serial.print(prev_times[PIN_LEFT_STICK]); Serial.print(F("\t"));
     // Serial.print("| micros()-prev_times = ");
     // Serial.println(micros()-prev_times[PIN_LEFT_STICK]);
 
@@ -180,7 +180,7 @@ float thrustToMotorValLinear(float deltaThrust, float val0)
     // float deltaOmega;
     // // float omega0 = max(val0,40)/rpm2val;
     // float omega0 = max(map(val0, 40.0, 180.0, 0.0, 14600.0),1000);
-    // //Serial.print(omega0); Serial.print("\t");
+    // //Serial.print(omega0); Serial.print(F("\t"));
     // deltaOmega = deltaThrust/(2*omega0*18.00201E-09);
     // // deltaOmega = deltaThrust/(2*omega0*9.00201E-09);
     //

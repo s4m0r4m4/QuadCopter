@@ -132,12 +132,12 @@ void setup_mpu9250()
         break;
 
     default:
-        Serial.print("[ERROR]: Bad Gyro range command: ");
+        Serial.print(F("[ERROR]: Bad Gyro range command: "));
         Serial.println(gyro_range);
     }
     if (verbose)
     {
-        Serial.print("[Setup] Setting Gryo command:");
+        Serial.print(F("[Setup] Setting Gryo command:"));
         sprintf(dummy_str, " %x (hex) =  %d (dec) \n", gyro_range_cmd,
                 gyro_range_cmd);
         Serial.print(dummy_str);
@@ -168,12 +168,12 @@ void setup_mpu9250()
         break;
 
     default:
-        Serial.print("[ERROR]: Bad Accelerometer range command");
+        Serial.print(F("[ERROR]: Bad Accelerometer range command"));
         Serial.println(accel_range_cmd);
     }
     if (verbose)
     {
-        Serial.print("[Setup] Setting Accelerometer command:");
+        Serial.print(F("[Setup] Setting Accelerometer command:"));
         sprintf(dummy_str, " %x (hex) =  %d (dec) \n", accel_range_cmd,
                 accel_range_cmd);
         Serial.print(dummy_str);
@@ -195,7 +195,7 @@ void setup_mpu9250()
         break;
 
     default:
-        Serial.println("[ERROR] Bad Mag Resolution command");
+        Serial.println(F("[ERROR] Bad Mag Resolution command"));
         Serial.println(mag_bits);
     }
 
@@ -204,9 +204,9 @@ void setup_mpu9250()
                       WHO_AM_I_MPU9250); // Read WHO_AM_I register for MPU-9250
     if (SerialDebug)
     {
-        Serial.print("MPU9250 I AM");
+        Serial.print(F("MPU9250 I AM"));
         Serial.print(c, HEX);
-        Serial.print(" I should be ");
+        Serial.print(F(" I should be "));
         Serial.println(WHO_AM_I_EXPECTED, HEX);
     }
 
@@ -214,46 +214,45 @@ void setup_mpu9250()
     {
         if (SerialDebug)
         {
-            Serial.println("MPU9250 is online...");
+            Serial.println(F("MPU9250 is online..."));
 
             MPU9250SelfTest(SelfTest); // Start by performing self test and reporting values
-            Serial.print("x-axis self test: acceleration trim within : ");
+            Serial.print(F("x-axis self test: acceleration trim within : "));
             Serial.print(SelfTest[0], 1);
-            Serial.println("% of factory value");
-            Serial.print("y-axis self test: acceleration trim within : ");
+            Serial.println(F("% of factory value"));
+            Serial.print(F("y-axis self test: acceleration trim within : "));
             Serial.print(SelfTest[1], 1);
-            Serial.println("% of factory value");
-            Serial.print("z-axis self test: acceleration trim within : ");
+            Serial.println(F("% of factory value"));
+            Serial.print(F("z-axis self test: acceleration trim within : "));
             Serial.print(SelfTest[2], 1);
-            Serial.println("% of factory value");
-            Serial.print("x-axis self test: gyration trim within : ");
+            Serial.println(F("% of factory value"));
+            Serial.print(F("x-axis self test: gyration trim within : "));
             Serial.print(SelfTest[3], 1);
-            Serial.println("% of factory value");
-            Serial.print("y-axis self test: gyration trim within : ");
+            Serial.println(F("% of factory value"));
+            Serial.print(F("y-axis self test: gyration trim within : "));
             Serial.print(SelfTest[4], 1);
-            Serial.println("% of factory value");
-            Serial.print("z-axis self test: gyration trim within : ");
+            Serial.println(F("% of factory value"));
+            Serial.print(F("z-axis self test: gyration trim within : "));
             Serial.print(SelfTest[5], 1);
-            Serial.println("% of factory value");
+            Serial.println(F("% of factory value"));
         }
 
         calibrateMPU9250(gyroBias, accelBias); // Calibrate gyro and accelerometers,
                                                // load biases in bias registers
-        //    Serial.print("GYRO BIASES: "); Serial.print(gyroBias[0]);
-        //    Serial.print("\t"); Serial.print(gyroBias[1]); Serial.print("\t");
-        //    Serial.print(gyroBias[2]); Serial.print("\n");
+        //    Serial.print(F("GYRO BIASES: ")); Serial.print(gyroBias[0]);
+        //    Serial.print(F("\t")); Serial.print(gyroBias[1]); Serial.print(F("\t"));
+        //    Serial.print(gyroBias[2]); Serial.print(F("\n"));
 
         initMPU9250(gyro_range_cmd, accel_range_cmd, gyro_dlpf, accel_dlpf);
 
         if (SerialDebug)
         {
-            Serial.println(
-                "MPU9250 initialized for active data mode...."); // Initialize device
-                                                                 // for active mode
-                                                                 // read of
-                                                                 // acclerometer,
-                                                                 // gyroscope, and
-                                                                 // temperature
+            Serial.println(F("MPU9250 initialized for active data mode....")); // Initialize device
+                                                                               // for active mode
+                                                                               // read of
+                                                                               // acclerometer,
+                                                                               // gyroscope, and
+                                                                               // temperature
         }
         // Read the WHO_AM_I register of the magnetometer, this is a good test of
         // communication
@@ -261,36 +260,35 @@ void setup_mpu9250()
                           WHO_AM_I_AK8963); // Read WHO_AM_I register for AK8963
         if (SerialDebug)
         {
-            Serial.print("AK8963 I AM ");
+            Serial.print(F("AK8963 I AM "));
             Serial.print(d, HEX);
-            Serial.print(" I should be ");
+            Serial.print(F(" I should be "));
             Serial.println(0x48, HEX);
         }
         // Get magnetometer calibration from AK8963 ROM
         initAK8963(magCalibration, mag_resolution_cmd);
         if (SerialDebug)
         {
-            Serial.println(
-                "AK8963 initialized for active data mode...."); // Initialize device
-                                                                // for active mode
-                                                                // read of
-                                                                // magnetometer
+            Serial.println(F("AK8963 initialized for active data mode....")); // Initialize device
+                                                                              // for active mode
+                                                                              // read of
+                                                                              // magnetometer
         }
 
         if (SerialDebug)
         {
-            //  Serial.println("Calibration values: ");
-            Serial.print("X-Axis sensitivity adjustment value ");
+            //  Serial.println(F("Calibration values: "));
+            Serial.print(F("X-Axis sensitivity adjustment value "));
             Serial.println(magCalibration[0], 2);
-            Serial.print("Y-Axis sensitivity adjustment value ");
+            Serial.print(F("Y-Axis sensitivity adjustment value "));
             Serial.println(magCalibration[1], 2);
-            Serial.print("Z-Axis sensitivity adjustment value ");
+            Serial.print(F("Z-Axis sensitivity adjustment value "));
             Serial.println(magCalibration[2], 2);
         }
     }
     else
     {
-        Serial.print("Could not connect to MPU9250: 0x");
+        Serial.print(F("Could not connect to MPU9250: 0x"));
         Serial.println(c, HEX);
 
         I2Cscan(); // TODO remove this
@@ -346,7 +344,7 @@ void initMPU9250(int gyro_range_cmd, int accel_range_cmd, int gyro_dlpf,
         writeByte(MPU9250_ADDRESS, CONFIG, GYRO_DLPF_CFG_250HZ);
         break;
     default:
-        Serial.println("Gyro DLPF command not recognized! Using 41 Hz...");
+        Serial.println(F("Gyro DLPF command not recognized! Using 41 Hz..."));
         writeByte(MPU9250_ADDRESS, CONFIG, GYRO_DLPF_CFG_41HZ);
         break;
     }
@@ -369,7 +367,7 @@ void initMPU9250(int gyro_range_cmd, int accel_range_cmd, int gyro_dlpf,
         accel_bandwidth_cmd = A_DLPF_CFG_460Hz;
         break;
     default:
-        Serial.println("Accel DLPF command not recognized! Using 41 Hz...");
+        Serial.println(F("Accel DLPF command not recognized! Using 41 Hz..."));
         accel_bandwidth_cmd = A_DLPF_CFG_41Hz;
         break;
     }
@@ -635,11 +633,11 @@ void calibrateMPU9250(float *dest1, float *dest2)
         if ((accel_bias_reg[ii] & mask))
             mask_bit[ii] = 0x01; // If temperature compensation bit is set, record
                                  // that fact in mask_bit
-                                 //    Serial.print("\n Factory Accel Bias = ");
+                                 //    Serial.print(F("\n Factory Accel Bias = "));
                                  //    Serial.print(accel_bias_reg[ii],DEC);
-                                 //    Serial.print("\n NEW     Accel Bias = ");
+                                 //    Serial.print(F("\n NEW     Accel Bias = "));
                                  //    Serial.print(accel_bias[ii],DEC);
-    }                            // Serial.print("\n ");
+    }                            // Serial.print(F("\n "));
 
     // Construct total accelerometer bias, including calculated average
     // accelerometer bias from above
@@ -840,10 +838,10 @@ void I2Cscan()
 
     nDevices = 0;
 
-    Serial.println("Scanning...");
+    Serial.println(F("Scanning..."));
     for (address = 1; address < 127; address++)
     {
-        Serial.print("Scanning: ");
+        Serial.print(F("Scanning: "));
         Serial.println(address);
         // The i2c_scanner uses the return value of
         // the Write.endTransmisstion to see if
@@ -854,33 +852,33 @@ void I2Cscan()
 
         if (error == 0)
         {
-            Serial.print("I2C device found at address 0x");
+            Serial.print(F("I2C device found at address 0x"));
             if (address < 16)
-                Serial.print("0");
+                Serial.print(F("0"));
             Serial.print(address, HEX);
-            Serial.println("  !");
+            Serial.println(F("  !"));
 
             nDevices++;
         }
         else if (error == 4)
         {
-            Serial.print("Unknow error at address 0x");
+            Serial.print(F("Unknow error at address 0x"));
             if (address < 16)
-                Serial.print("0");
+                Serial.print(F("0"));
             Serial.println(address, HEX);
         }
     }
     if (nDevices == 0)
-        Serial.println("No I2C devices found\n");
+        Serial.println(F("No I2C devices found\n"));
     else
-        Serial.println("done\n");
+        Serial.println(F("done\n"));
 }
 
 // // I2C recovery ========================================
 // #define SDAPIN A4
 // #define CLKPIN A5
 // void I2Crecovery() {
-//   Serial.println("Starting I2C bus recovery");
+//   Serial.println(F("Starting I2C bus recovery"));
 //   delay(2000);
 //   // try i2c bus recovery at 100kHz = 5uS high, 5uS low
 //   pinMode(SDAPIN, OUTPUT); // keeping SDA high during recovery
@@ -902,7 +900,7 @@ void I2Cscan()
 //   delayMicroseconds(2);
 //   // bus status is now : FREE
 //
-//   Serial.println("bus recovery done, starting scan in 2 secs");
+//   Serial.println(F("bus recovery done, starting scan in 2 secs"));
 //   // return to power up mode
 //   pinMode(SDAPIN, INPUT);
 //   pinMode(CLKPIN, INPUT);

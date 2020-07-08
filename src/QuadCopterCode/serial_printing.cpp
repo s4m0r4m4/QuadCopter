@@ -5,12 +5,12 @@
 **************************************************************/
 void serialPrintArray(float *vec)
 {
-  Serial.print(vec[0]);
-  Serial.print("\t");
-  Serial.print(vec[1]);
-  Serial.print("\t");
-  Serial.print(vec[2]);
-  Serial.print("\t");
+    Serial.print(vec[0]);
+    Serial.print(F("\t"));
+    Serial.print(vec[1]);
+    Serial.print(F("\t"));
+    Serial.print(vec[2]);
+    Serial.print(F("\t"));
 }
 
 /**************************************************************
@@ -18,14 +18,14 @@ void serialPrintArray(float *vec)
 **************************************************************/
 void serialPrintArray4(float *vec)
 {
-  Serial.print(vec[0]);
-  Serial.print("\t");
-  Serial.print(vec[1]);
-  Serial.print("\t");
-  Serial.print(vec[2]);
-  Serial.print("\t");
-  Serial.print(vec[3]);
-  Serial.print("\t");
+    Serial.print(vec[0]);
+    Serial.print(F("\t"));
+    Serial.print(vec[1]);
+    Serial.print(F("\t"));
+    Serial.print(vec[2]);
+    Serial.print(F("\t"));
+    Serial.print(vec[3]);
+    Serial.print(F("\t"));
 }
 
 /**************************************************************
@@ -33,6 +33,6 @@ void serialPrintArray4(float *vec)
 **************************************************************/
 void serialPrintArrayLn(float *vec)
 {
-  serialPrintArray(vec);
-  Serial.print("\n");
+    serialPrintArray(vec);
+    Serial.print("\n");
 }
