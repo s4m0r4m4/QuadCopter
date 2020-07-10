@@ -3,7 +3,7 @@
 /**************************************************************
  * Function: setupRadioReceiver
 **************************************************************/
-void setupRadioReceiver();
+void setupRadioReceiver(volatile float *radioVals);
 
 // --------------------------------------------------------------------
 // Utility Functions and ISRs (interrupt service routines)

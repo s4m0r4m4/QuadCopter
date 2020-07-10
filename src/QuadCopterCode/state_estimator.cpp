@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include <math.h>
 #include <state_estimator.h>
@@ -13,20 +12,19 @@ float eInt[3] = {0.0f, 0.0f, 0.0f}; // vector to hold integral error for estimat
 float x[3];                         // Linear position: x, y, z
 float v[3];                         // inear velocity: vx, vy, vz
 
-// global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference
-// System)
-float GyroMeasError =
+// global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference System)
+const float GyroMeasError =
     PI * (40.0f /
           180.0f); // gyroscope measurement error in rads/s (start at 40 deg/s)
-float GyroMeasDrift =
+const float GyroMeasDrift =
     PI *
     (0.0f /
-     180.0f);                                         // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
-float beta = sqrt(3.0f / 4.0f) * GyroMeasError * 0.1; // compute beta
-float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute zeta, the other free
-                                                      // parameter in the Madgwick
-                                                      // scheme usually set to a small
-                                                      // or zero value
+     180.0f);                                               // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
+const float beta = sqrt(3.0f / 4.0f) * GyroMeasError * 0.1; // compute beta
+const float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute zeta, the other free
+                                                            // parameter in the Madgwick
+                                                            // scheme usually set to a small
+                                                            // or zero value
 
 // There is a tradeoff in the beta parameter between accuracy and response
 // speed.
@@ -78,7 +76,7 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
     roll = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
 
-    yaw = (yaw / DEG2RAD); // Declination at Burbank, California is 12.2 degrees. Minneapolis is basically 0deg
+    yaw = yaw / DEG2RAD; // Declination at Burbank, California is 12.2 degrees. Minneapolis is basically 0deg
     roll = roll / DEG2RAD;
     pitch = pitch / DEG2RAD;
 

@@ -1,11 +1,12 @@
 #include <Arduino.h>
-
+#include <controller.h>
 #include <Wire.h>
 #include <Servo.h>
 #include <mpu9250_code.h>
 #include <state_estimator.h>
 #include <quadcopter_constants.h>
 #include <global_junk.h>
+#include <receive_radio_signal.h>
 
 /**************************************************************
  * Pin outs for radio and LED indicator
@@ -32,6 +33,8 @@ volatile float valRightThrottleUpDown = 0;
 volatile float valRightThrottleLeftRight = 0;
 float integrated_pitch_err = 0.0f; // integral error for Controller
 float integrated_roll_err = 0.0f;  // integral error for Controller
+volatile unsigned long prev_times[NUM_PINS];
+volatile float radioRecieverVals[NUM_PINS];
 
 /**************************************************************
  * Function: setup
@@ -54,7 +57,7 @@ void setup()
     setup_mpu9250();
 
     // Set up the radio reciever
-    // setupRadioReceiver();
+    setupRadioReceiver(radioRecieverVals);
 
     pinMode(LED_STABLE, OUTPUT);
 
@@ -114,7 +117,7 @@ void loop()
     // delay(50);
 
     // TODO: merge euler and g into single state vector!!!
-    // calculateControlVector(euler_angles, g, escControlVec, delta_time);
+    calculateControlVector(euler_angles, g, escControlVec, delta_time);
 
     // esc0.write(escControlVec[0]);
     // esc1.write(escControlVec[1]);

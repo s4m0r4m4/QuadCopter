@@ -26,7 +26,7 @@ int maxOuts[NUM_PINS];
 /**************************************************************
  * Function: setupRadioReceiver
 **************************************************************/
-void setupRadioReceiver()
+void setupRadioReceiver(volatile float *radioRecieverVals)
 {
     // Initialize values
     for (int i = 0; i < NUM_PINS; i++)
@@ -87,11 +87,11 @@ void setupRadioReceiver()
 
     // Set up normal interrupts for operation
     Serial.println(F("Beginning normal radio reciever listener..."));
-    PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising, RISING);
-    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising, RISING);
+    // PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising, RISING);
+    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising, RISING);
+    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising, RISING);
+    // PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising, RISING);
+    // PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising, RISING);
 }
 
 // --------------------------------------------------------------------

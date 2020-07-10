@@ -41,7 +41,6 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
     float pitch_err = 0.0;
     float roll_err = 0.0;
     float scale_val = 1.0; // value for scaling controller feedback at low RPM
-    float desired_pitch;
     // float pitch_rate_err = 0.0;
     // float roll_rate_err = 0.0;
 
@@ -60,8 +59,7 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
     // // use Euler angles to calculate errors only if within certain range
     if ((abs(euler_angles[1]) < 85) && (abs(euler_angles[2]) < 85))
     {
-        desired_pitch = -radioRecieverVals[PIN_RIGHT_STICK_UPDOWN];
-        // if desired_pitch<
+
         pitch_err = (-radioRecieverVals[PIN_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
         roll_err = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
         // if euler_angles[1] is high, push on A3 and A0

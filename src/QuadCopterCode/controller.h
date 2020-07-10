@@ -3,7 +3,7 @@
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void calculateControlVector();
+void calculateControlVector(float *euler_angles, float *g, float *escControlVec, float delta_time);
 
 /**************************************************************
  * Function: checkForActiveSignal
