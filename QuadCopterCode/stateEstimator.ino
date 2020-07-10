@@ -68,6 +68,6 @@ void updateState() //
 //  serialPrintArray(v);
 //  serialPrintArrayLn(x);
 //  serialPrintArray(q);
-//  serialPrintArray(euler_angles);
+serialPrintArrayLn(euler_angles);
 
 }

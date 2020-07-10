@@ -74,7 +74,7 @@ void setup() {
   setup_mpu9250(accel_range, gyro_range, mag_bits, gyro_dlpf, accel_dlpf);
 
   // Set up the radio reciever
-  setupRadioReceiver();
+  //setupRadioReceiver();
 
   pinMode(LED_STABLE, OUTPUT);
 
@@ -105,7 +105,7 @@ void loop() {
 // delay(50);
 
     // noInterrupts(); // don't want to interrupt from radio reciever to screw up the calculated control vector
-    calculate_control_vec();
+    // calculate_control_vec();
     // interrupts();
 
     esc0.write(escControlVec[0]);
