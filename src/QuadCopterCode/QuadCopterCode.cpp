@@ -107,9 +107,6 @@ void loop()
     float delta_time = ((Now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
     lastUpdate = Now;
 
-    Serial.println("Loop!");
-    delay(500);
-
     read_mpu9250(a, g, m);
     updateState(a, g, m, q, delta_time, euler_angles);
 
