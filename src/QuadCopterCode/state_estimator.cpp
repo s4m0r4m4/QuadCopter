@@ -72,13 +72,17 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
     // applied in the correct order which for this configuration is yaw, pitch, and then roll.
     // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-    yaw = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+    yaw = atan2(
+        2.0f * (q[1] * q[2] + q[0] * q[3]),
+        q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
     pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    roll = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    roll = -atan2(
+        -2.0f * (q[0] * q[1] + q[2] * q[3]),
+        -1.0f * (q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]));
 
     yaw = yaw / DEG2RAD; // Declination at Burbank, California is 12.2 degrees. Minneapolis is basically 0deg
-    roll = roll / DEG2RAD;
     pitch = pitch / DEG2RAD;
+    roll = roll / DEG2RAD;
 
     // Set gloabl variables (as degrees)
     euler_angles[0] = yaw;
