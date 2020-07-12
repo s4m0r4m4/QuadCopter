@@ -6,6 +6,64 @@
 int dumbCounter = 0;
 
 /**************************************************************
+ * Function: thrustToMotorValLinear
+**************************************************************/
+float thrustToMotorValLinear(float deltaThrust, float val0)
+{
+    // max RPM of 14618 (go from 0 to max if throttle from 40 to 180)
+    const float rpm2val = (180.0 - 40.0) / (14618.0 - 0.0);
+    const float thrust2rpm = (14618.0 - 0.0) / (3.5 - 0);
+    // float deltaOmega;
+    // // float omega0 = max(val0,40)/rpm2val;
+    // float omega0 = max(map(val0, 40.0, 180.0, 0.0, 14600.0),1000);
+    // //Serial.print(omega0); Serial.print(F("\t"));
+    // deltaOmega = deltaThrust/(2*omega0*18.00201E-09);
+    // // deltaOmega = deltaThrust/(2*omega0*9.00201E-09);
+    //
+    // return deltaOmega*rpm2val;
+    return deltaThrust * thrust2rpm * rpm2val;
+}
+
+// ---------- Nonlinear transformation from desired force to motor command val ------------
+const float valMin = -30.0;
+const float linToQuad = 40.0;        // value at which the curve-fit transitions from linear to quadratic
+const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
+const float maxThrustOverVal = (3.5 - forceAtLinToQuad) / ((180.0 - linToQuad) * (180.0 - linToQuad));
+
+/**************************************************************
+ * Function: motorValToThrustNonlinear
+**************************************************************/
+float motorValToThrustNonlinear(float val0)
+{
+    if (val0 > linToQuad)
+    {
+        return maxThrustOverVal * (val0 - linToQuad) * (val0 - linToQuad) + forceAtLinToQuad;
+    }
+    else
+    {
+        return (val0 - valMin) * forceAtLinToQuad / (linToQuad - valMin);
+        // return val0*forceAtLinToQuad/40;
+    }
+}
+
+/**************************************************************
+ * Function: thrustToMotorValNonlinear
+**************************************************************/
+float thrustToMotorValNonlinear(float deltaThrust, float val0)
+{
+    float thrust = max(0, deltaThrust + motorValToThrustNonlinear(val0));
+    if (thrust > forceAtLinToQuad)
+    {
+        float valOut = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
+        return constrain(valOut, 0.0, 180.0);
+    }
+    else
+    {
+        return constrain(thrust / (forceAtLinToQuad / (linToQuad - valMin)) + valMin, 0.0, 180.0);
+    }
+}
+
+/**************************************************************
  * Function: calculateControlVector
 **************************************************************/
 void calculateControlVector(float *euler_angles, float *g, float *escControlVec, float delta_time)
@@ -164,63 +222,5 @@ bool checkForActiveSignal()
     else
     {
         return true;
-    }
-}
-
-/**************************************************************
- * Function: thrustToMotorValLinear
-**************************************************************/
-float thrustToMotorValLinear(float deltaThrust, float val0)
-{
-    // max RPM of 14618 (go from 0 to max if throttle from 40 to 180)
-    const float rpm2val = (180.0 - 40.0) / (14618.0 - 0.0);
-    const float thrust2rpm = (14618.0 - 0.0) / (3.5 - 0);
-    // float deltaOmega;
-    // // float omega0 = max(val0,40)/rpm2val;
-    // float omega0 = max(map(val0, 40.0, 180.0, 0.0, 14600.0),1000);
-    // //Serial.print(omega0); Serial.print(F("\t"));
-    // deltaOmega = deltaThrust/(2*omega0*18.00201E-09);
-    // // deltaOmega = deltaThrust/(2*omega0*9.00201E-09);
-    //
-    // return deltaOmega*rpm2val;
-    return deltaThrust * thrust2rpm * rpm2val;
-}
-
-// ---------- Nonlinear transformation from desired force to motor command val ------------
-const float valMin = -30.0;
-const float linToQuad = 40.0;        // value at which the curve-fit transitions from linear to quadratic
-const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
-const float maxThrustOverVal = (3.5 - forceAtLinToQuad) / ((180.0 - linToQuad) * (180.0 - linToQuad));
-
-/**************************************************************
- * Function: thrustToMotorValNonlinear
-**************************************************************/
-float thrustToMotorValNonlinear(float deltaThrust, float val0)
-{
-    float thrust = max(0, deltaThrust + motorValToThrustNonlinear(val0));
-    if (thrust > forceAtLinToQuad)
-    {
-        float valOut = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
-        return constrain(valOut, 0.0, 180.0);
-    }
-    else
-    {
-        return constrain(thrust / (forceAtLinToQuad / (linToQuad - valMin)) + valMin, 0.0, 180.0);
-    }
-}
-
-/**************************************************************
- * Function: motorValToThrustNonlinear
-**************************************************************/
-float motorValToThrustNonlinear(float val0)
-{
-    if (val0 > linToQuad)
-    {
-        return maxThrustOverVal * (val0 - linToQuad) * (val0 - linToQuad) + forceAtLinToQuad;
-    }
-    else
-    {
-        return (val0 - valMin) * forceAtLinToQuad / (linToQuad - valMin);
-        // return val0*forceAtLinToQuad/40;
     }
 }
