@@ -66,7 +66,7 @@ float thrustToMotorValNonlinear(float deltaThrust, float val0)
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void calculateControlVector(float *euler_angles, float *g, float *escControlVec, float delta_time)
+void calculateControlVector(float *euler_angles, float *g, float *motor_control_vector, float delta_time)
 {
     // ----------- LQR state gains -----------
     // // Derivitive feedback term
@@ -150,18 +150,18 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
         deltaF_pitch = pitch_err * kP + (0.0f - pitch_rate) * DEG2RAD * kD + integrated_pitch_err * kI * scale_val;
         deltaF_roll = roll_err * kP + (0.0f - roll_rate) * DEG2RAD * kD + integrated_roll_err * kI * scale_val;
 
-        escControlVec[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
-        escControlVec[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, valLeftThrottle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
-        escControlVec[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, valLeftThrottle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
-        escControlVec[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, valLeftThrottle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
+        motor_control_vector[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
+        motor_control_vector[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, valLeftThrottle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
+        motor_control_vector[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, valLeftThrottle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
+        motor_control_vector[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, valLeftThrottle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
     }
     else
     {
         // if no radio signal, power off the motors
-        escControlVec[0] = 0.0;
-        escControlVec[1] = 0.0;
-        escControlVec[2] = 0.0;
-        escControlVec[3] = 0.0;
+        motor_control_vector[0] = 0.0;
+        motor_control_vector[1] = 0.0;
+        motor_control_vector[2] = 0.0;
+        motor_control_vector[3] = 0.0;
     }
 
     if (dumbCounter > 10)
@@ -190,7 +190,7 @@ void calculateControlVector(float *euler_angles, float *g, float *escControlVec,
         // Serial.print(thrustToMotorValNonlinear(deltaF_roll, valLeftThrottle)); Serial.print(F("\t"));
 
         // Serial.print(F("|\t"));
-        // serialPrintArray4(escControlVec);
+        // serialPrintArray4(motor_control_vector);
         //    // serialPrintArray(euler_angles);
         // Serial.print("\n");
         dumbCounter = 0;
@@ -215,7 +215,7 @@ bool checkForActiveSignal()
     // Serial.print("| micros()-prev_times = ");
     // Serial.println(micros()-prev_times[PIN_LEFT_STICK]);
 
-    if (micros() - prev_times[PIN_LEFT_STICK] > timeout_limit) //(micros()-prev_times[PIN_RIGHT_STICK_LEFTRIGHT]>limit) || (micros()-prev_times[PIN_RIGHT_STICK_UPDOWN]>limit) ||
+    if (micros() - last_rise_time[PIN_LEFT_STICK] > timeout_limit) //(micros()-prev_times[PIN_RIGHT_STICK_LEFTRIGHT]>limit) || (micros()-prev_times[PIN_RIGHT_STICK_UPDOWN]>limit) ||
     {
         return false;
     }

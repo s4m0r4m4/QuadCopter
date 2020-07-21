@@ -123,6 +123,8 @@ float runningAverage(int M, int interrupt_val_index)
 // For PWM reading on multiple channels
 void rising()
 {
+    PCintPort::attachInterrupt(PCintPort::arduinoPin, &falling, FALLING);
+
     uint8_t interrupt_val_index;
 
     // Serial.print("Rising Pin: ");
@@ -133,24 +135,22 @@ void rising()
     // Serial.println(interrupt_val_index);
 
     last_rise_time[interrupt_val_index] = micros();
-    if (interrupt_val_index == INDEX_LEFT_STICK)
-    {
-        Serial.print(F("| RISING Interrupt = "));
-        Serial.print(last_rise_time[interrupt_val_index]);
-        Serial.print(F("\t"));
-    }
-
-    PCintPort::attachInterrupt(interrupt_val_index, &falling, FALLING);
+    // if (interrupt_val_index == INDEX_LEFT_STICK)
+    // {
+    //     Serial.print(F("| RISING Interrupt = "));
+    //     Serial.print(last_rise_time[interrupt_val_index]);
+    //     Serial.print(F("\t"));
+    // }
 }
 
 // For PWM reading on multiple channels
 void falling()
 {
-    ;
 
     // Serial.print("Falling Pin: ");
     // Serial.print(PCintPort::arduinoPin);
 
+    PCintPort::attachInterrupt(PCintPort::arduinoPin, &rising, RISING);
     const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
     // Serial.print(" - Interrupt: ");
@@ -166,14 +166,12 @@ void falling()
 
     radioRecieverVals[interrupt_val_index] = runningAverage(scaled_val, interrupt_val_index);
 
-    if (interrupt_val_index == INDEX_LEFT_STICK)
-    {
-        Serial.print(F("| FALLING average = "));
-        Serial.println(radioRecieverVals[interrupt_val_index]);
-        Serial.println(F("\t"));
-    }
-
-    PCintPort::attachInterrupt(interrupt_val_index, &rising, RISING);
+    // if (interrupt_val_index == INDEX_LEFT_STICK)
+    // {
+    //     Serial.print(F("| FALLING average = "));
+    //     Serial.println(radioRecieverVals[interrupt_val_index]);
+    //     Serial.println(F("\t"));
+    // }
 }
 
 // For PWM reading on multiple channels

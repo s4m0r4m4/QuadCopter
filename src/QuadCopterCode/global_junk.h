@@ -6,7 +6,7 @@
 #ifndef GLOBAL_JUNK_H
 #define GLOBAL_JUNK_H
 
-extern volatile unsigned long prev_times[NUM_INPUTS];
+extern volatile unsigned long last_rise_time[NUM_INPUTS];
 extern volatile float radioRecieverVals[NUM_INPUTS];
 extern volatile float valLeftThrottle;
 extern volatile float valRightThrottleUpDown;
