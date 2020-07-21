@@ -5,63 +5,69 @@
 #include <global_junk.h>
 #include <receive_radio_signal.h>
 
-#define MAX_ANGLE_COMMAND 10
-#define ZEROS_ALL_PINS                     \
-    {                                      \
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 \
+#define MAX_ANGLE_COMMAND 10 // degrees
+#define ZEROS_ALL_INPUTS \
+    {                    \
+        0, 0, 0, 0, 0,   \
     }
 
 #define RADIO_STICK_DIFF = 370;
 
 const float factor = 1.0;
-float timeout = 32000;
-float scaled_val;
 
-volatile unsigned long pwm_val_array[NUM_PINS];
-unsigned long minIns[NUM_PINS];
-unsigned long maxIns[NUM_PINS];
-int minOuts[NUM_PINS];
-int maxOuts[NUM_PINS];
+uint8_t PIN_TO_CMD_VEC[NUM_PINS];
+
+// All of these arrays are the same ordering
+const int minIns[NUM_INPUTS] = {
+    877,  // LEFT KNOB
+    1000, // RIGHT KNOB
+    1175, // LEFT STICK
+    1310, // RIGHT STICK UP-DOWN
+    1268  // RIGHT STICK LEFT-RIGHT
+};
+const int maxIns[NUM_INPUTS] = {
+    1880,
+    1995,
+    1810,
+    1820,
+    2020};
+const int minOuts[NUM_INPUTS] = {
+    0,
+    0,
+    0,
+    -MAX_ANGLE_COMMAND,
+    -MAX_ANGLE_COMMAND};
+const int maxOuts[NUM_INPUTS] = {
+    100,
+    100,
+    180,
+    MAX_ANGLE_COMMAND,
+    MAX_ANGLE_COMMAND};
 
 /**************************************************************
  * Function: setupRadioReceiver
 **************************************************************/
 void setupRadioReceiver(volatile float *radioRecieverVals)
 {
-    // Initialize values
-    for (int i = 0; i < NUM_PINS; i++)
-    {
-        prev_times[i] = 0;
-        radioRecieverVals[i] = 0.0;
-    }
-
-    minIns[PIN_LEFT_STICK] = 1175;
-    maxIns[PIN_LEFT_STICK] = 1810;
-    minOuts[PIN_LEFT_STICK] = 0;
-    maxOuts[PIN_LEFT_STICK] = 180;
-    minOuts[PIN_RIGHT_STICK_UPDOWN] = -MAX_ANGLE_COMMAND;
-    maxOuts[PIN_RIGHT_STICK_UPDOWN] = MAX_ANGLE_COMMAND;
-    minOuts[PIN_RIGHT_STICK_LEFTRIGHT] = -MAX_ANGLE_COMMAND;
-    maxOuts[PIN_RIGHT_STICK_LEFTRIGHT] = MAX_ANGLE_COMMAND;
-    minOuts[PIN_RIGHT_KNOB] = 0.0;
-    maxOuts[PIN_RIGHT_KNOB] = 100.0;
-    minOuts[PIN_LEFT_KNOB] = 0.0;
-    maxOuts[PIN_LEFT_KNOB] = 100.0;
-    minIns[PIN_RIGHT_KNOB] = 1000;
-    maxIns[PIN_RIGHT_KNOB] = 1995;
-    minIns[PIN_LEFT_KNOB] = 877;
-    maxIns[PIN_LEFT_KNOB] = 1880;
-
-    minIns[PIN_RIGHT_STICK_UPDOWN] = 1310;
-    maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820;
-    minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268;
-    maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020;
+    // Setup pin-to-index mapping
+    PIN_TO_CMD_VEC[PIN_LEFT_KNOB] = INDEX_LEFT_KNOB;
+    PIN_TO_CMD_VEC[PIN_RIGHT_KNOB] = INDEX_RIGHT_KNOB;
+    PIN_TO_CMD_VEC[PIN_LEFT_STICK] = INDEX_LEFT_STICK;
+    PIN_TO_CMD_VEC[PIN_RIGHT_STICK_LEFTRIGHT] = INDEX_RIGHT_STICK_LEFTRIGHT;
+    PIN_TO_CMD_VEC[PIN_RIGHT_STICK_UPDOWN] = INDEX_RIGHT_STICK_UPDOWN;
 
     pinMode(PIN_LEFT_STICK, INPUT);
     pinMode(PIN_RIGHT_STICK_UPDOWN, INPUT);
     pinMode(PIN_RIGHT_STICK_LEFTRIGHT, INPUT);
     pinMode(PIN_RIGHT_KNOB, INPUT);
     pinMode(PIN_LEFT_KNOB, INPUT);
+
+    // Initialize values
+    for (int i = 0; i < NUM_INPUTS; i++)
+    {
+        last_rise_time[i] = micros();
+        radioRecieverVals[i] = 0.0;
+    }
 
     // Wait while calibration data is collected
     // Serial.println(F("Gathering data from radio receiver for calibration..."));
@@ -76,111 +82,122 @@ void setupRadioReceiver(volatile float *radioRecieverVals)
     // delay(100);
 
     // Calibrate
-    Serial.print(F("Avg Val (RightUpDown) = "));
-    Serial.println(pwm_val_array[PIN_RIGHT_STICK_UPDOWN]);
-    Serial.print(F("Avg Val (RightLeftRight) = "));
-    Serial.println(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT]);
-    minIns[PIN_RIGHT_STICK_UPDOWN] = 1310;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] - RADIO_STICK_DIFF, 1000, 1600);
-    maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] + RADIO_STICK_DIFF, 1610, 2000); // = 1820;
-    minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] - RADIO_STICK_DIFF, 1000, 1600); //1268;
-    maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] + RADIO_STICK_DIFF, 1610, 2000); //2020;
+    // TOOD: what was I doing here????????
+    // minIns[PIN_RIGHT_STICK_UPDOWN] = 1310;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] - RADIO_STICK_DIFF, 1000, 1600);
+    // maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] + RADIO_STICK_DIFF, 1610, 2000); // = 1820;
+    // minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] - RADIO_STICK_DIFF, 1000, 1600); //1268;
+    // maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] + RADIO_STICK_DIFF, 1610, 2000); //2020;
 
     // Set up normal interrupts for operation
     Serial.println(F("Beginning normal radio reciever listener..."));
-    // PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising, RISING);
-    // PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising, RISING);
+    PCintPort::attachInterrupt(PIN_LEFT_STICK, &falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &falling, RISING);
+    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &falling, RISING);
 }
 
 // --------------------------------------------------------------------
 // Utility Functions and ISRs (interrupt service routines)
 // --------------------------------------------------------------------
-
-float runningAverage(int M, int latest_interrupted_pin)
+float runningAverage(int M, int interrupt_val_index)
 {
 #define LM_SIZE 15
-    static int LM[LM_SIZE][NUM_PINS]; // LastMeasurements
-    static byte index[NUM_PINS] = ZEROS_ALL_PINS;
-    static long sum[NUM_PINS] = ZEROS_ALL_PINS;
+    static int LM[LM_SIZE][NUM_INPUTS]; // LastMeasurements
+    static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
+    static long sum[NUM_INPUTS] = ZEROS_ALL_INPUTS;
     static byte count = 0;
 
     // keep sum updated to improve speed.
-    sum[latest_interrupted_pin] -= LM[index[latest_interrupted_pin]][latest_interrupted_pin];
-    LM[index[latest_interrupted_pin]][latest_interrupted_pin] = M;
-    sum[latest_interrupted_pin] += LM[index[latest_interrupted_pin]][latest_interrupted_pin];
-    index[latest_interrupted_pin]++;
-    index[latest_interrupted_pin] = index[latest_interrupted_pin] % LM_SIZE;
+    sum[interrupt_val_index] -= LM[index[interrupt_val_index]][interrupt_val_index];
+    LM[index[interrupt_val_index]][interrupt_val_index] = M;
+    sum[interrupt_val_index] += LM[index[interrupt_val_index]][interrupt_val_index];
+    index[interrupt_val_index]++;
+    index[interrupt_val_index] = index[interrupt_val_index] % LM_SIZE;
     if (count < LM_SIZE)
         count++;
 
-    return sum[latest_interrupted_pin] / count;
+    return sum[interrupt_val_index] / count;
 }
 
 // For PWM reading on multiple channels
 void rising()
 {
-    uint8_t latest_interrupted_pin;
+    uint8_t interrupt_val_index;
 
-    latest_interrupted_pin = PCintPort::arduinoPin;
-    PCintPort::attachInterrupt(latest_interrupted_pin, &falling, FALLING);
-    prev_times[latest_interrupted_pin] = micros();
-    // if (latest_interrupted_pin==PIN_LEFT_STICK){
-    //   Serial.print(F("| Interrupt = "));
-    //   Serial.print(prev_times[latest_interrupted_pin]);
-    //   Serial.print(F("\t"));
-    // }
-    // Serial.print(F("Pin = ")); Serial.print( latest_interrupted_pin); Serial.print(F("\t"));
+    // Serial.print("Rising Pin: ");
+    // Serial.print(PCintPort::arduinoPin);
+
+    interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin];
+    // Serial.print(" - Interrupt: ");
+    // Serial.println(interrupt_val_index);
+
+    last_rise_time[interrupt_val_index] = micros();
+    if (interrupt_val_index == INDEX_LEFT_STICK)
+    {
+        Serial.print(F("| RISING Interrupt = "));
+        Serial.print(last_rise_time[interrupt_val_index]);
+        Serial.print(F("\t"));
+    }
+
+    PCintPort::attachInterrupt(interrupt_val_index, &falling, FALLING);
 }
 
 // For PWM reading on multiple channels
 void falling()
 {
+    ;
 
-    // TODO: can this be a const?
-    uint8_t latest_interrupted_pin = PCintPort::arduinoPin; // Get the pin #
-    PCintPort::attachInterrupt(latest_interrupted_pin, &rising, RISING);
-    unsigned long nowish = micros();
-    unsigned long pwm_val = nowish - prev_times[latest_interrupted_pin];
-    // scaled_val = map(pwm_val, minIns[latest_interrupted_pin], maxIns[latest_interrupted_pin],
-    //                                                      minOuts[latest_interrupted_pin]*factor, maxOuts[latest_interrupted_pin]*factor)/factor;
+    // Serial.print("Falling Pin: ");
+    // Serial.print(PCintPort::arduinoPin);
 
-    scaled_val = map(pwm_val, minIns[latest_interrupted_pin], maxIns[latest_interrupted_pin],
-                     minOuts[latest_interrupted_pin], maxOuts[latest_interrupted_pin]);
-    radioRecieverVals[latest_interrupted_pin] = runningAverage(scaled_val, latest_interrupted_pin);
+    const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
-    // if (latest_interrupted_pin==9){
-    // Serial.print(F("micros=")); Serial.print(nowish); Serial.print(F("\t")); Serial.print(F("prev_time[")); Serial.print(latest_interrupted_pin); Serial.print(F("]="));
-    // Serial.print(prev_times[latest_interrupted_pin]); Serial.print(F("\t"));
-    // if (latest_interrupted_pin==PIN_RIGHT_STICK_LEFTRIGHT){
-    //   Serial.print(F("pwm_val = ")); Serial.print(pwm_val); Serial.print(F("/")); Serial.println(scaled_val);
-    // }
-    // }
+    // Serial.print(" - Interrupt: ");
+    // Serial.println(interrupt_val_index);
+
+    const unsigned long nowish = micros();
+    const unsigned long pwm_val = nowish - last_rise_time[interrupt_val_index];
+    // scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
+    //                                                      minOuts[interrupt_val_index]*factor, maxOuts[interrupt_val_index]*factor)/factor;
+
+    const float scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
+                                 minOuts[interrupt_val_index], maxOuts[interrupt_val_index]);
+
+    radioRecieverVals[interrupt_val_index] = runningAverage(scaled_val, interrupt_val_index);
+
+    if (interrupt_val_index == INDEX_LEFT_STICK)
+    {
+        Serial.print(F("| FALLING average = "));
+        Serial.println(radioRecieverVals[interrupt_val_index]);
+        Serial.println(F("\t"));
+    }
+
+    PCintPort::attachInterrupt(interrupt_val_index, &rising, RISING);
 }
 
 // For PWM reading on multiple channels
-void rising_calibration()
-{
-    uint8_t latest_interrupted_pin = PCintPort::arduinoPin;
-    PCintPort::attachInterrupt(latest_interrupted_pin, &falling_calibration, FALLING);
-    prev_times[latest_interrupted_pin] = micros();
-    // Serial.print(F("prev_times[")); Serial.print(latest_interrupted_pin); Serial.print(F("] = ")); Serial.print(prev_times[latest_interrupted_pin]);
-}
+// void rising_calibration()
+// {
+//     uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
+//     PCintPort::attachInterrupt(interrupt_val_index, &falling_calibration, FALLING);
+//     prev_times[interrupt_val_index] = micros();
+//     // Serial.print(F("prev_times[")); Serial.print(interrupt_val_index); Serial.print(F("] = ")); Serial.print(prev_times[interrupt_val_index]);
+// }
 
-// For PWM reading on multiple channels
-void falling_calibration()
-{
+// // For PWM reading on multiple channels
+// void falling_calibration()
+// {
 
-    uint8_t latest_interrupted_pin = PCintPort::arduinoPin; // Get the pin #
-    PCintPort::attachInterrupt(latest_interrupted_pin, &rising_calibration, RISING);
-    pwm_val_array[latest_interrupted_pin] = micros() - prev_times[latest_interrupted_pin]; //runningAverage(, latest_interrupted_pin);
-                                                                                           // Serial.print(F("pwm_val_array[")); Serial.print(latest_interrupted_pin); Serial.print(F("] = ")); Serial.print(pwm_val_array[latest_interrupted_pin]);
-                                                                                           // if (latest_interrupted_pin==9){
-                                                                                           // Serial.print(F("micros=")); Serial.print(nowish); Serial.print(F("\t")); Serial.print(F("prev_time[")); Serial.print(latest_interrupted_pin); Serial.print(F("]="));
-                                                                                           // Serial.print(prev_times[latest_interrupted_pin]); Serial.print(F("\t"));
-                                                                                           // if (latest_interrupted_pin==PIN_RIGHT_STICK_LEFTRIGHT){
-                                                                                           //   Serial.print(F("pwm_val = ")); Serial.print(pwm_val); Serial.print(F("/")); Serial.println(scaled_val);
-                                                                                           // }
-                                                                                           // }
-}
+//     uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
+//     PCintPort::attachInterrupt(interrupt_val_index, &rising_calibration, RISING);
+//     pwm_val_array[interrupt_val_index] = micros() - prev_times[interrupt_val_index]; //runningAverage(, interrupt_val_index);
+//                                                                                      // Serial.print(F("pwm_val_array[")); Serial.print(interrupt_val_index); Serial.print(F("] = ")); Serial.print(pwm_val_array[interrupt_val_index]);
+//                                                                                      // if (interrupt_val_index==9){
+//                                                                                      // Serial.print(F("micros=")); Serial.print(nowish); Serial.print(F("\t")); Serial.print(F("prev_time[")); Serial.print(interrupt_val_index); Serial.print(F("]="));
+//                                                                                      // Serial.print(prev_times[interrupt_val_index]); Serial.print(F("\t"));
+//                                                                                      // if (interrupt_val_index==PIN_RIGHT_STICK_LEFTRIGHT){
+//                                                                                      //   Serial.print(F("pwm_val = ")); Serial.print(pwm_val); Serial.print(F("/")); Serial.println(scaled_val);
+//                                                                                      // }
+//                                                                                      // }
+// }

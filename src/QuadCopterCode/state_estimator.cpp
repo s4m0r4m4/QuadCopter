@@ -124,7 +124,7 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     //  serialPrintArray(v);
     //  serialPrintArrayLn(x);
     //  serialPrintArray(q);
-    serialPrintArrayLn(euler_angles);
+    serialPrintArray(euler_angles);
 }
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"

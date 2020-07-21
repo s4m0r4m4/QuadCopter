@@ -34,8 +34,8 @@ volatile float valRightThrottleUpDown = 0;
 volatile float valRightThrottleLeftRight = 0;
 float integrated_pitch_err = 0.0f; // integral error for Controller
 float integrated_roll_err = 0.0f;  // integral error for Controller
-volatile unsigned long prev_times[NUM_PINS];
-volatile float radioRecieverVals[NUM_PINS];
+volatile unsigned long prev_times[NUM_INPUTS];
+volatile float radioRecieverVals[NUM_INPUTS];
 
 /**************************************************************
  * Function: runStateEstimation
@@ -46,7 +46,7 @@ inline void runStateEstimation()
     float a[3], g[3], m[3]; // variables to hold latest sensor data values
 
     // integration interval for both filter schemes
-    uint32_t Now = micros();
+    const uint32_t Now = micros();
     float delta_time = ((Now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
     lastUpdate = Now;
 
@@ -79,6 +79,7 @@ void setup()
 
     pinMode(LED_STABLE, OUTPUT);
 
+    runStateEstimation();
     Serial.print(F("Initial Pitch = "));
     Serial.println(euler_angles[1]);
     Serial.print(F("Initial Roll = "));
@@ -120,21 +121,7 @@ void loop()
     Serial.print("\t");
     Serial.print(radioRecieverVals[3]);
     Serial.print("\t");
-    Serial.print(radioRecieverVals[4]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[5]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[6]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[7]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[8]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[9]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[10]);
-    Serial.print("\t");
-    Serial.println(radioRecieverVals[11]);
+    Serial.println(radioRecieverVals[4]);
 
     delay(50);
 
