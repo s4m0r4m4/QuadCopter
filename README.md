@@ -19,7 +19,8 @@ This is my hobby project, it is still very much in work!
  - GND ---------------------- GND
  - 10 kOhm resistor from 3.3V to SDA
  - 10 kOhm resistor from 3.3V to SCL
- 99
+
+
 Uses code from kriswiner/MPU9250 to read accelerometers, magnetometer, and gyroscopes from MPU9250 and then runs [Magdwick](https://www.x-io.co.uk/res/doc/madgwick_internal_report.pdf) (or Mahoney, depending on how I'm feeling) state estimation algorithm. Big thanks to Kris for his work there.
  
  ## Radio (FlySky FS-CT6) Setup
