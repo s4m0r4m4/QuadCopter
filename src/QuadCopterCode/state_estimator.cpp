@@ -13,18 +13,20 @@ float x[3];                         // Linear position: x, y, z
 float v[3];                         // inear velocity: vx, vy, vz
 
 // global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference System)
+// gyroscope measurement error in rads/s (start at 40 deg/s)
 const float GyroMeasError =
     PI * (40.0f /
-          180.0f); // gyroscope measurement error in rads/s (start at 40 deg/s)
+          180.0f);
+// gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
 const float GyroMeasDrift =
     PI *
     (0.0f /
-     180.0f);                                               // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
-const float beta = sqrt(3.0f / 4.0f) * GyroMeasError * 0.1; // compute beta
-const float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute zeta, the other free
-                                                            // parameter in the Madgwick
-                                                            // scheme usually set to a small
-                                                            // or zero value
+     180.0f);
+const float MAGDWICK_BETA = sqrt(3.0f / 4.0f) * GyroMeasError * 1.5; // compute beta
+const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute zeta, the other free
+                                                                     // parameter in the Madgwick
+                                                                     // scheme usually set to a small
+                                                                     // or zero value
 
 // There is a tradeoff in the beta parameter between accuracy and response
 // speed.
@@ -57,9 +59,9 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     float pitch, yaw, roll;
 
     //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
-    //  MadgwickQuaternionUpdate(a, g, m, q, delta_time);
+    MadgwickQuaternionUpdate(a, g, m, q, delta_time);
     //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
-    MahonyQuaternionUpdate(a, g, m, q, delta_time);
+    // MahonyQuaternionUpdate(a, g, m, q, delta_time);
 
     adjustAccelData(a, q);
 
@@ -136,6 +138,7 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
 //void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
 void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_time)
 {
+    // TODO: make these consts
     float ax = a[0];
     float ay = a[1];
     float az = a[2];
@@ -221,10 +224,10 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delt
     s4 *= norm;
 
     // Compute rate of change of quaternion
-    qDot1 = 0.5f * (-q2 * gx - q3 * gy - q4 * gz) - beta * s1;
-    qDot2 = 0.5f * (q1 * gx + q3 * gz - q4 * gy) - beta * s2;
-    qDot3 = 0.5f * (q1 * gy - q2 * gz + q4 * gx) - beta * s3;
-    qDot4 = 0.5f * (q1 * gz + q2 * gy - q3 * gx) - beta * s4;
+    qDot1 = 0.5f * (-q2 * gx - q3 * gy - q4 * gz) - MAGDWICK_BETA * s1;
+    qDot2 = 0.5f * (q1 * gx + q3 * gz - q4 * gy) - MAGDWICK_BETA * s2;
+    qDot3 = 0.5f * (q1 * gy - q2 * gz + q4 * gx) - MAGDWICK_BETA * s3;
+    qDot4 = 0.5f * (q1 * gz + q2 * gy - q3 * gx) - MAGDWICK_BETA * s4;
 
     // Integrate to yield quaternion
     q1 += qDot1 * delta_time;
@@ -233,6 +236,8 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delt
     q4 += qDot4 * delta_time;
     norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4); // normalise quaternion
     norm = 1.0f / norm;
+
+    // Store in output quaternion vector
     q[0] = q1 * norm;
     q[1] = q2 * norm;
     q[2] = q3 * norm;

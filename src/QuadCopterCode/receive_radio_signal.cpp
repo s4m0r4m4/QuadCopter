@@ -125,14 +125,7 @@ void rising()
 {
     PCintPort::attachInterrupt(PCintPort::arduinoPin, &falling, FALLING);
 
-    uint8_t interrupt_val_index;
-
-    // Serial.print("Rising Pin: ");
-    // Serial.print(PCintPort::arduinoPin);
-
-    interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin];
-    // Serial.print(" - Interrupt: ");
-    // Serial.println(interrupt_val_index);
+    const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin];
 
     last_rise_time[interrupt_val_index] = micros();
     // if (interrupt_val_index == INDEX_LEFT_STICK)
@@ -147,14 +140,9 @@ void rising()
 void falling()
 {
 
-    // Serial.print("Falling Pin: ");
-    // Serial.print(PCintPort::arduinoPin);
-
     PCintPort::attachInterrupt(PCintPort::arduinoPin, &rising, RISING);
-    const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
-    // Serial.print(" - Interrupt: ");
-    // Serial.println(interrupt_val_index);
+    const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
     const unsigned long nowish = micros();
     const unsigned long pwm_val = nowish - last_rise_time[interrupt_val_index];
@@ -173,29 +161,3 @@ void falling()
     //     Serial.println(F("\t"));
     // }
 }
-
-// For PWM reading on multiple channels
-// void rising_calibration()
-// {
-//     uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
-//     PCintPort::attachInterrupt(interrupt_val_index, &falling_calibration, FALLING);
-//     prev_times[interrupt_val_index] = micros();
-//     // Serial.print(F("prev_times[")); Serial.print(interrupt_val_index); Serial.print(F("] = ")); Serial.print(prev_times[interrupt_val_index]);
-// }
-
-// // For PWM reading on multiple channels
-// void falling_calibration()
-// {
-
-//     uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
-//     PCintPort::attachInterrupt(interrupt_val_index, &rising_calibration, RISING);
-//     pwm_val_array[interrupt_val_index] = micros() - prev_times[interrupt_val_index]; //runningAverage(, interrupt_val_index);
-//                                                                                      // Serial.print(F("pwm_val_array[")); Serial.print(interrupt_val_index); Serial.print(F("] = ")); Serial.print(pwm_val_array[interrupt_val_index]);
-//                                                                                      // if (interrupt_val_index==9){
-//                                                                                      // Serial.print(F("micros=")); Serial.print(nowish); Serial.print(F("\t")); Serial.print(F("prev_time[")); Serial.print(interrupt_val_index); Serial.print(F("]="));
-//                                                                                      // Serial.print(prev_times[interrupt_val_index]); Serial.print(F("\t"));
-//                                                                                      // if (interrupt_val_index==PIN_RIGHT_STICK_LEFTRIGHT){
-//                                                                                      //   Serial.print(F("pwm_val = ")); Serial.print(pwm_val); Serial.print(F("/")); Serial.println(scaled_val);
-//                                                                                      // }
-//                                                                                      // }
-// }
