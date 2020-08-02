@@ -22,11 +22,11 @@ const float GyroMeasDrift =
     PI *
     (0.0f /
      180.0f);
-const float MAGDWICK_BETA = sqrt(3.0f / 4.0f) * GyroMeasError * 1.5; // compute beta
-const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute zeta, the other free
-                                                                     // parameter in the Madgwick
-                                                                     // scheme usually set to a small
-                                                                     // or zero value
+// compute beta
+const float MAGDWICK_BETA = sqrt(3.0f / 4.0f) * GyroMeasError * 1.5;
+// compute zeta [NOT CURRENTLY USED], the other free parameter in the Madgwick
+// scheme usually set to a small or zero value
+const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 
 // There is a tradeoff in the beta parameter between accuracy and response
 // speed.
@@ -45,10 +45,10 @@ const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;       // compute 
 // In any case, this is the free parameter in the Madgwick filtering and fusion
 // scheme.
 
-// these are the free parameters in the Mahony filter and fusion scheme, Kp for
-// proportional feedback, Ki for integral
-#define Kp 25.0f
-#define Ki 0.25f
+// these are the free parameters in the Mahony filter and fusion scheme, KP_MAHONEY for
+// proportional feedback, KI_MAHONEY for integral
+#define KP_MAHONEY 25.0f
+#define KI_MAHONEY 0.25f
 
 /**************************************************************
  * Function: updateState
@@ -93,13 +93,13 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
 
     if ((roll < 5) && (roll > -5) && (pitch < 5) && (pitch > -5))
     {
-        digitalWrite(LED_STABLE, HIGH);
+        digitalWrite(LED_LEVEL_INDICATOR, HIGH);
     }
     else
     {
-        digitalWrite(LED_STABLE, LOW);
+        digitalWrite(LED_LEVEL_INDICATOR, LOW);
     }
-    digitalWrite(LED_STABLE, HIGH);
+    digitalWrite(LED_LEVEL_INDICATOR, HIGH);
 
     // float v_avg = 0;
     const float cutoff = 0.1;
@@ -126,7 +126,7 @@ void updateState(float *a, float *g, float *m, float *q, float delta_time, float
     //  serialPrintArray(v);
     //  serialPrintArrayLn(x);
     //  serialPrintArray(q);
-    serialPrintArray(euler_angles);
+    // serialPrintArray(euler_angles);
 }
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
@@ -341,7 +341,7 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_
     ex = (ay * vz - az * vy) + (my * wz - mz * wy);
     ey = (az * vx - ax * vz) + (mz * wx - mx * wz);
     ez = (ax * vy - ay * vx) + (mx * wy - my * wx);
-    if (Ki > 0.0f)
+    if (KI_MAHONEY > 0.0f)
     {
         eInt[0] += ex; // accumulate integral error
         eInt[1] += ey; // missing delta_time? I guess thats fine as long as its taken into account in K_i
@@ -355,9 +355,9 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_
     }
 
     // Apply feedback terms
-    gx = gx + Kp * ex + Ki * eInt[0];
-    gy = gy + Kp * ey + Ki * eInt[1];
-    gz = gz + Kp * ez + Ki * eInt[2];
+    gx = gx + KP_MAHONEY * ex + KI_MAHONEY * eInt[0];
+    gy = gy + KP_MAHONEY * ey + KI_MAHONEY * eInt[1];
+    gz = gz + KP_MAHONEY * ez + KI_MAHONEY * eInt[2];
 
     // Integrate rate of change of quaternion
     pa = q2;

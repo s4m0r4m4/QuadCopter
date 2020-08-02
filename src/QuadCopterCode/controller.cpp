@@ -169,9 +169,9 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
         // Serial.print(valLeftThrottle); Serial.print(F("|\t"));
         //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print(F("\t"));
         //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print(F("|\t"));
-        Serial.print(radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]);
+        Serial.print(radioRecieverVals[INDEX_RIGHT_STICK_UPDOWN]);
         Serial.print(F("\t"));
-        Serial.print(radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]);
+        Serial.print(radioRecieverVals[INDEX_RIGHT_STICK_LEFTRIGHT]);
         Serial.print(F("|\t"));
         // Serial.print(pitch); Serial.print(F("\t"));
         // Serial.print(scale_val); Serial.print(F("|\t"));
@@ -199,8 +199,6 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
     {
         dumbCounter++;
     }
-
-    // plot_x = deltaF_pitch;
 }
 
 /**************************************************************
@@ -209,13 +207,9 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
 bool checkForActiveSignal()
 {
 
-    const unsigned long timeout_limit = 100000;
-    // Serial.print("| ControllerCheck = ");
-    // Serial.print(prev_times[PIN_LEFT_STICK]); Serial.print(F("\t"));
-    // Serial.print("| micros()-prev_times = ");
-    // Serial.println(micros()-prev_times[PIN_LEFT_STICK]);
+    const unsigned long TIMEOUT_MICROSECONDS = 100000;
 
-    if (micros() - last_rise_time[PIN_LEFT_STICK] > timeout_limit) //(micros()-prev_times[PIN_RIGHT_STICK_LEFTRIGHT]>limit) || (micros()-prev_times[PIN_RIGHT_STICK_UPDOWN]>limit) ||
+    if (micros() - last_rise_time[INDEX_LEFT_STICK] > TIMEOUT_MICROSECONDS) //(micros()-prev_times[PIN_RIGHT_STICK_LEFTRIGHT]>limit) || (micros()-prev_times[PIN_RIGHT_STICK_UPDOWN]>limit) ||
     {
         return false;
     }

@@ -38,9 +38,9 @@ volatile unsigned long last_rise_time[NUM_INPUTS];
 volatile float radioRecieverVals[NUM_INPUTS];
 
 /**************************************************************
- * Function: runStateEstimation
+ * Function: estimateStateAndControlVec
 **************************************************************/
-inline void runStateEstimation()
+inline void estimateStateAndControlVec()
 {
 
     float a[3], g[3], m[3]; // variables to hold latest sensor data values
@@ -52,6 +52,9 @@ inline void runStateEstimation()
 
     read_mpu9250(a, g, m);
     updateState(a, g, m, q, delta_time, euler_angles);
+
+    // TODO: merge euler and g into single state vector!!!
+    calculateControlVector(euler_angles, g, motor_control_vector, delta_time);
 }
 
 /**************************************************************
@@ -77,22 +80,22 @@ void setup()
     // Set up the radio reciever
     setupRadioReceiver(radioRecieverVals);
 
-    pinMode(LED_STABLE, OUTPUT);
+    pinMode(LED_LEVEL_INDICATOR, OUTPUT);
 
-    runStateEstimation();
+    estimateStateAndControlVec();
     Serial.print(F("Initial Pitch = "));
     Serial.println(euler_angles[1]);
     Serial.print(F("Initial Roll = "));
     Serial.println(euler_angles[2]);
     while (abs(euler_angles[1]) > 2.0)
     {
-        runStateEstimation();
+        estimateStateAndControlVec();
         Serial.print("Waiting on PITCH to stabilize: ");
         Serial.println(euler_angles[1]);
     }
     while (abs(euler_angles[2]) > 2.0)
     {
-        runStateEstimation();
+        estimateStateAndControlVec();
         Serial.print("Waiting on ROLL to stabilize: ");
         Serial.println(euler_angles[2]);
     }
@@ -110,23 +113,19 @@ void setup()
 **************************************************************/
 void loop()
 {
-    runStateEstimation();
+    estimateStateAndControlVec();
 
-    Serial.print("|");
-    Serial.print(radioRecieverVals[0]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[1]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[2]);
-    Serial.print("\t");
-    Serial.print(radioRecieverVals[3]);
-    Serial.print("\t");
-    Serial.println(radioRecieverVals[4]);
-
-    delay(50);
-
-    // TODO: merge euler and g into single state vector!!!
-    //calculateControlVector(euler_angles, g, motor_control_vector, delta_time);
+    // Serial.print("|");
+    // Serial.print(radioRecieverVals[0]);
+    // Serial.print("\t");
+    // Serial.print(radioRecieverVals[1]);
+    // Serial.print("\t");
+    // Serial.print(radioRecieverVals[2]);
+    // Serial.print("\t");
+    // Serial.print(radioRecieverVals[3]);
+    // Serial.print("\t");
+    // Serial.print(radioRecieverVals[4]);
+    // Serial.println("");
 
     // esc0.write(motor_control_vector[0]);
     // esc1.write(motor_control_vector[1]);
