@@ -19,42 +19,37 @@ Servo motor3;
 float motor_control_vector[4];
 
 // Interrupt flag for MPU 9250
-volatile bool intFlag_MPU9250 = false;
+volatile bool interrupt_flag_MPU9250 = false;
 
 // Timer
-uint32_t lastUpdate = 0; // used to calculate integration interval
+uint32_t last_update_microseconds = 0; // used to calculate integration interval
 
 float euler_angles[3]; // yaw, pitch, roll (3-2-1)
 
-float q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
+float quaternion_vector[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
 
 // initialize global junk
-volatile float valLeftThrottle = 0;
-volatile float valRightThrottleUpDown = 0;
-volatile float valRightThrottleLeftRight = 0;
-float integrated_pitch_err = 0.0f; // integral error for Controller
-float integrated_roll_err = 0.0f;  // integral error for Controller
 volatile unsigned long last_rise_time[NUM_INPUTS];
-volatile float radioRecieverVals[NUM_INPUTS];
+volatile float input_radio_values[NUM_INPUTS];
 
 /**************************************************************
- * Function: estimateStateAndControlVec
+ * Function: EstimateStateAndControlVec
 **************************************************************/
-inline void estimateStateAndControlVec()
+inline void EstimateStateAndControlVec()
 {
 
-    float a[3], g[3], m[3]; // variables to hold latest sensor data values
+    float accel_vector_xyz[3], g[3], magnetometer_vector[3]; // variables to hold latest sensor data values
 
     // integration interval for both filter schemes
-    const uint32_t Now = micros();
-    float delta_time = ((Now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
-    lastUpdate = Now;
+    const uint32_t now_microseconds = micros();
+    float delta_time_sec = ((now_microseconds - last_update_microseconds) / 1000000.0f); // set integration time by time elapsed since last filter update
+    last_update_microseconds = now_microseconds;
 
-    read_mpu9250(a, g, m);
-    updateState(a, g, m, q, delta_time, euler_angles);
+    ReadMPU9250(accel_vector_xyz, g, magnetometer_vector);
+    UpdateState(accel_vector_xyz, g, magnetometer_vector, quaternion_vector, delta_time_sec, euler_angles);
 
     // TODO: merge euler and g into single state vector!!!
-    calculateControlVector(euler_angles, g, motor_control_vector, delta_time);
+    CalculateControlVector(euler_angles, g, motor_control_vector, delta_time_sec);
 }
 
 /**************************************************************
@@ -75,27 +70,27 @@ void setup()
     motor3.attach(A3);
 
     // Set up the MPU 9250 IMU board
-    setup_mpu9250();
+    SetupMPU9250();
 
     // Set up the radio reciever
-    setupRadioReceiver(radioRecieverVals);
+    setupRadioReceiver(input_radio_values);
 
     pinMode(LED_LEVEL_INDICATOR, OUTPUT);
 
-    estimateStateAndControlVec();
+    EstimateStateAndControlVec();
     Serial.print(F("Initial Pitch = "));
     Serial.println(euler_angles[1]);
     Serial.print(F("Initial Roll = "));
     Serial.println(euler_angles[2]);
     while (abs(euler_angles[1]) > 2.0)
     {
-        estimateStateAndControlVec();
+        EstimateStateAndControlVec();
         Serial.print("Waiting on PITCH to stabilize: ");
         Serial.println(euler_angles[1]);
     }
     while (abs(euler_angles[2]) > 2.0)
     {
-        estimateStateAndControlVec();
+        EstimateStateAndControlVec();
         Serial.print("Waiting on ROLL to stabilize: ");
         Serial.println(euler_angles[2]);
     }
@@ -113,7 +108,7 @@ void setup()
 **************************************************************/
 void loop()
 {
-    estimateStateAndControlVec();
+    EstimateStateAndControlVec();
 
     // Serial.print("|");
     // Serial.print(radioRecieverVals[0]);

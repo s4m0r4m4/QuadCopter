@@ -54,7 +54,7 @@ float
 float SelfTest[6]; // holds results of gyro and accelerometer self test
 
 // ################################################################################
-void read_mpu9250(float *a, float *g, float *m)
+void ReadMPU9250(float *a, float *g, float *m)
 {
 
     // If intPin goes high, all data registers have new data
@@ -92,7 +92,7 @@ void read_mpu9250(float *a, float *g, float *m)
 }
 
 // #######################################################################################################
-void setup_mpu9250()
+void SetupMPU9250()
 {
 
     int accel_range = 16; // ACC_FULL_SCALE_16_G;

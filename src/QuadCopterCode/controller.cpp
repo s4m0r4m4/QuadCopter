@@ -3,12 +3,14 @@
 #include <controller.h>
 #include <global_junk.h>
 
-int dumbCounter = 0;
+int dumb_counter = 0;
+float integrated_pitch_err = 0.0f; // integral error for Controller
+float integrated_roll_err = 0.0f;  // integral error for Controller
 
 /**************************************************************
  * Function: thrustToMotorValLinear
 **************************************************************/
-float thrustToMotorValLinear(float deltaThrust, float val0)
+float thrustToMotorValLinear(float delta_thrust, float val0)
 {
     // max RPM of 14618 (go from 0 to max if throttle from 40 to 180)
     const float rpm2val = (180.0 - 40.0) / (14618.0 - 0.0);
@@ -21,7 +23,7 @@ float thrustToMotorValLinear(float deltaThrust, float val0)
     // // deltaOmega = deltaThrust/(2*omega0*9.00201E-09);
     //
     // return deltaOmega*rpm2val;
-    return deltaThrust * thrust2rpm * rpm2val;
+    return delta_thrust * thrust2rpm * rpm2val;
 }
 
 // ---------- Nonlinear transformation from desired force to motor command val ------------
@@ -49,9 +51,9 @@ float motorValToThrustNonlinear(float val0)
 /**************************************************************
  * Function: thrustToMotorValNonlinear
 **************************************************************/
-float thrustToMotorValNonlinear(float deltaThrust, float val0)
+float thrustToMotorValNonlinear(float delta_thrust, float val0)
 {
-    float thrust = max(0, deltaThrust + motorValToThrustNonlinear(val0));
+    float thrust = max(0, delta_thrust + motorValToThrustNonlinear(val0));
     if (thrust > forceAtLinToQuad)
     {
         float valOut = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
@@ -66,7 +68,7 @@ float thrustToMotorValNonlinear(float deltaThrust, float val0)
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void calculateControlVector(float *euler_angles, float *g, float *motor_control_vector, float delta_time)
+void CalculateControlVector(float *euler_angles, float *g, float *motor_control_vector, float delta_time)
 {
     // ----------- LQR state gains -----------
     // // Derivitive feedback term
@@ -112,14 +114,14 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
     }
 
     // Read primary throttle value from left stick
-    valLeftThrottle = radioRecieverVals[PIN_LEFT_STICK];
+    float input_left_throttle = input_radio_values[PIN_LEFT_STICK];
 
     // // use Euler angles to calculate errors only if within certain range
     if ((abs(euler_angles[1]) < 85) && (abs(euler_angles[2]) < 85))
     {
 
-        pitch_err = (-radioRecieverVals[PIN_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
-        roll_err = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
+        pitch_err = (-input_radio_values[PIN_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
+        roll_err = (input_radio_values[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
         // if euler_angles[1] is high, push on A3 and A0
         // if euler_angles[2] is high, push on A1 and A0
         //   pitch_err = radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]-euler_angles[1];
@@ -144,16 +146,16 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
         // deltaF_roll_old = roll_err*kP + (0.0f - roll_rate)*DEG2RAD*kD;
 
         // --- PID Controller design w/ integrator limit ---
-        scale_val = min(1.0, (valLeftThrottle / 100.0) * (valLeftThrottle / 100.0));
-        integrated_pitch_err = constrain(integrated_pitch_err + pitch_err * delta_time, -0.25, 0.25); // TODO - is this the right delta_time (used for estimators...)
-        integrated_roll_err = constrain(integrated_roll_err + roll_err * delta_time, -0.25, 0.25);    // TODO - is this the right delta_time (used for estimators...)
+        scale_val = min(1.0, (input_left_throttle / 100.0) * (input_left_throttle / 100.0));
+        integrated_pitch_err = constrain(integrated_pitch_err + (pitch_err * delta_time), -0.25, 0.25);
+        integrated_roll_err = constrain(integrated_roll_err + (roll_err * delta_time), -0.25, 0.25);
         deltaF_pitch = pitch_err * kP + (0.0f - pitch_rate) * DEG2RAD * kD + integrated_pitch_err * kI * scale_val;
         deltaF_roll = roll_err * kP + (0.0f - roll_rate) * DEG2RAD * kD + integrated_roll_err * kI * scale_val;
 
-        motor_control_vector[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, valLeftThrottle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
-        motor_control_vector[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, valLeftThrottle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
-        motor_control_vector[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, valLeftThrottle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
-        motor_control_vector[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, valLeftThrottle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
+        motor_control_vector[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, input_left_throttle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
+        motor_control_vector[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, input_left_throttle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
+        motor_control_vector[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, input_left_throttle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
+        motor_control_vector[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, input_left_throttle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
     }
     else
     {
@@ -164,14 +166,14 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
         motor_control_vector[3] = 0.0;
     }
 
-    if (dumbCounter > 10)
+    if (dumb_counter > 10)
     {
         // Serial.print(valLeftThrottle); Serial.print(F("|\t"));
         //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print(F("\t"));
         //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print(F("|\t"));
-        Serial.print(radioRecieverVals[INDEX_RIGHT_STICK_UPDOWN]);
+        Serial.print(input_radio_values[INDEX_RIGHT_STICK_UPDOWN]);
         Serial.print(F("\t"));
-        Serial.print(radioRecieverVals[INDEX_RIGHT_STICK_LEFTRIGHT]);
+        Serial.print(input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT]);
         Serial.print(F("|\t"));
         // Serial.print(pitch); Serial.print(F("\t"));
         // Serial.print(scale_val); Serial.print(F("|\t"));
@@ -193,11 +195,11 @@ void calculateControlVector(float *euler_angles, float *g, float *motor_control_
         // serialPrintArray4(motor_control_vector);
         //    // serialPrintArray(euler_angles);
         // Serial.print("\n");
-        dumbCounter = 0;
+        dumb_counter = 0;
     }
     else
     {
-        dumbCounter++;
+        dumb_counter++;
     }
 }
 

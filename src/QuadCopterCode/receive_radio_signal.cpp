@@ -152,7 +152,7 @@ void falling()
     const float scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
                                  minOuts[interrupt_val_index], maxOuts[interrupt_val_index]);
 
-    radioRecieverVals[interrupt_val_index] = runningAverage(scaled_val, interrupt_val_index);
+    input_radio_values[interrupt_val_index] = runningAverage(scaled_val, interrupt_val_index);
 
     // if (interrupt_val_index == INDEX_LEFT_STICK)
     // {

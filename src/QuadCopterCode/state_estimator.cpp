@@ -53,7 +53,7 @@ const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 /**************************************************************
  * Function: updateState
 **************************************************************/
-void updateState(float *a, float *g, float *m, float *q, float delta_time, float *euler_angles)
+void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float *euler_angles)
 {
 
     float pitch, yaw, roll;
