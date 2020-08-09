@@ -90,40 +90,48 @@ void setupRadioReceiver(volatile float *radioRecieverVals)
 
     // Set up normal interrupts for operation
     Serial.println(F("Beginning normal radio reciever listener..."));
-    PCintPort::attachInterrupt(PIN_LEFT_STICK, &falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &falling, RISING);
-    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &falling, RISING);
+    PCintPort::attachInterrupt(PIN_LEFT_STICK, &Falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &Falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &Falling, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &Falling, RISING);
+    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &Falling, RISING);
 }
 
 // --------------------------------------------------------------------
 // Utility Functions and ISRs (interrupt service routines)
 // --------------------------------------------------------------------
-float runningAverage(int M, int interrupt_val_index)
+/**************************************************************
+ * Function: RunningAverage
+**************************************************************/
+float RunningAverage(int new_value, int interrupt_val_index)
 {
-#define LM_SIZE 15
-    static int LM[LM_SIZE][NUM_INPUTS]; // LastMeasurements
+#define AVERAGE_BUFFER_SIZE 15
+
+    static int LM[AVERAGE_BUFFER_SIZE][NUM_INPUTS]; // LastMeasurements
     static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
     static long sum[NUM_INPUTS] = ZEROS_ALL_INPUTS;
     static byte count = 0;
 
     // keep sum updated to improve speed.
     sum[interrupt_val_index] -= LM[index[interrupt_val_index]][interrupt_val_index];
-    LM[index[interrupt_val_index]][interrupt_val_index] = M;
+    LM[index[interrupt_val_index]][interrupt_val_index] = new_value;
     sum[interrupt_val_index] += LM[index[interrupt_val_index]][interrupt_val_index];
     index[interrupt_val_index]++;
-    index[interrupt_val_index] = index[interrupt_val_index] % LM_SIZE;
-    if (count < LM_SIZE)
+    index[interrupt_val_index] = index[interrupt_val_index] % AVERAGE_BUFFER_SIZE;
+    if (count < AVERAGE_BUFFER_SIZE)
+    {
         count++;
+    }
 
     return sum[interrupt_val_index] / count;
 }
 
-// For PWM reading on multiple channels
-void rising()
+/**************************************************************
+ * Function: Rising (ISR - interrupt service routine)
+**************************************************************/
+void Rising()
 {
-    PCintPort::attachInterrupt(PCintPort::arduinoPin, &falling, FALLING);
+    PCintPort::attachInterrupt(PCintPort::arduinoPin, &Falling, FALLING);
 
     const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin];
 
@@ -136,23 +144,25 @@ void rising()
     // }
 }
 
-// For PWM reading on multiple channels
-void falling()
+/**************************************************************
+ * Function: Falling (ISR - interrupt service routine)
+**************************************************************/
+void Falling()
 {
 
-    PCintPort::attachInterrupt(PCintPort::arduinoPin, &rising, RISING);
+    PCintPort::attachInterrupt(PCintPort::arduinoPin, &Rising, RISING);
 
     const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
-    const unsigned long nowish = micros();
-    const unsigned long pwm_val = nowish - last_rise_time[interrupt_val_index];
+    const unsigned long pwm_val = micros() - last_rise_time[interrupt_val_index];
     // scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
     //                                                      minOuts[interrupt_val_index]*factor, maxOuts[interrupt_val_index]*factor)/factor;
 
-    const float scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
-                                 minOuts[interrupt_val_index], maxOuts[interrupt_val_index]);
+    const float scaled_val = pwm_val;
+    //  map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
+    //                              minOuts[interrupt_val_index], maxOuts[interrupt_val_index]);
 
-    input_radio_values[interrupt_val_index] = runningAverage(scaled_val, interrupt_val_index);
+    input_radio_values[interrupt_val_index] = RunningAverage(scaled_val, interrupt_val_index);
 
     // if (interrupt_val_index == INDEX_LEFT_STICK)
     // {

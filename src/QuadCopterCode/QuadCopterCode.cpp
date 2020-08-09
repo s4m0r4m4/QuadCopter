@@ -48,7 +48,6 @@ inline void EstimateStateAndControlVec()
     ReadMPU9250(accel_vector_xyz, g, magnetometer_vector);
     UpdateState(accel_vector_xyz, g, magnetometer_vector, quaternion_vector, delta_time_sec, euler_angles);
 
-    // TODO: merge euler and g into single state vector!!!
     CalculateControlVector(euler_angles, g, motor_control_vector, delta_time_sec);
 }
 
