@@ -136,10 +136,6 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
         // ------------------------------
 
         // ------------------------------
-    }
-
-    if (checkForActiveSignal() == true)
-    {
 
         // --- PD Controller design ---
         // deltaF_pitch_old = pitch_err*kP + (0.0f - pitch_rate)*DEG2RAD*kD;
@@ -147,23 +143,30 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
 
         // --- PID Controller design w/ integrator limit ---
         scale_val = min(1.0, (input_left_throttle / 100.0) * (input_left_throttle / 100.0));
-        integrated_pitch_err = constrain(integrated_pitch_err + (pitch_err * delta_time), -0.25, 0.25);
-        integrated_roll_err = constrain(integrated_roll_err + (roll_err * delta_time), -0.25, 0.25);
         deltaF_pitch = pitch_err * kP + (0.0f - pitch_rate) * DEG2RAD * kD + integrated_pitch_err * kI * scale_val;
         deltaF_roll = roll_err * kP + (0.0f - roll_rate) * DEG2RAD * kD + integrated_roll_err * kI * scale_val;
 
-        motor_control_vector[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, input_left_throttle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
-        motor_control_vector[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, input_left_throttle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
-        motor_control_vector[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, input_left_throttle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
-        motor_control_vector[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, input_left_throttle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
-    }
-    else
-    {
-        // if no radio signal, power off the motors
-        motor_control_vector[0] = 0.0;
-        motor_control_vector[1] = 0.0;
-        motor_control_vector[2] = 0.0;
-        motor_control_vector[3] = 0.0;
+        // Only send commands to the motor if recieving a radio signal
+        // This provides a nice remote kill switch
+        if (checkForActiveSignal() == true)
+        {
+
+            integrated_pitch_err = constrain(integrated_pitch_err + (pitch_err * delta_time), -0.25, 0.25);
+            integrated_roll_err = constrain(integrated_roll_err + (roll_err * delta_time), -0.25, 0.25);
+
+            motor_control_vector[0] = thrustToMotorValNonlinear(-deltaF_pitch - deltaF_roll, input_left_throttle); //- pitch_err*kP - roll_err*kP - pitch_rate_err*kD - roll_rate_err*kD;
+            motor_control_vector[1] = thrustToMotorValNonlinear(deltaF_pitch - deltaF_roll, input_left_throttle);  // pitch_err*kP - roll_err*kP + pitch_rate_err*kD - roll_rate_err*kD;
+            motor_control_vector[2] = thrustToMotorValNonlinear(deltaF_pitch + deltaF_roll, input_left_throttle);  // pitch_err*kP + roll_err*kP + pitch_rate_err*kD + roll_rate_err*kD;
+            motor_control_vector[3] = thrustToMotorValNonlinear(-deltaF_pitch + deltaF_roll, input_left_throttle); //- pitch_err*kP + roll_err*kP - pitch_rate_err*kD + roll_rate_err*kD;
+        }
+        else
+        {
+            // if no radio signal, power off the motors
+            motor_control_vector[0] = 0.0;
+            motor_control_vector[1] = 0.0;
+            motor_control_vector[2] = 0.0;
+            motor_control_vector[3] = 0.0;
+        }
     }
 
     if (dumb_counter > 10)
@@ -171,6 +174,8 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
         // Serial.print(valLeftThrottle); Serial.print(F("|\t"));
         //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print(F("\t"));
         //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print(F("|\t"));
+        Serial.print(input_radio_values[INDEX_LEFT_STICK]);
+        Serial.print(F("\t"));
         Serial.print(input_radio_values[INDEX_RIGHT_STICK_UPDOWN]);
         Serial.print(F("\t"));
         Serial.print(input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT]);
