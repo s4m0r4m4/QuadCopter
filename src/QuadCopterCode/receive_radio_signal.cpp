@@ -4,6 +4,7 @@
 #include <quadcopter_constants.h>
 #include <global_junk.h>
 #include <receive_radio_signal.h>
+#include <math.h>
 
 #define MAX_ANGLE_COMMAND 10 // degrees
 #define ZEROS_ALL_INPUTS \
@@ -18,19 +19,20 @@ const float factor = 1.0;
 uint8_t PIN_TO_CMD_VEC[NUM_PINS];
 
 // All of these arrays are the same ordering
-const int minIns[NUM_INPUTS] = {
-    877,  // LEFT KNOB
-    1000, // RIGHT KNOB
-    1175, // LEFT STICK
-    1310, // RIGHT STICK UP-DOWN
-    1268  // RIGHT STICK LEFT-RIGHT
+int reciever_value_average[NUM_INPUTS] = {
+    1375, // LEFT KNOB
+    1500, // RIGHT KNOB
+    1500, // LEFT STICK
+    1565, // RIGHT STICK UP-DOWN
+    1644  // RIGHT STICK LEFT-RIGHT
 };
-const int maxIns[NUM_INPUTS] = {
-    1880,
-    1995,
-    1810,
-    1820,
-    2020};
+const int reciever_value_range[NUM_INPUTS] = {
+    500, // LEFT KNOB
+    500, // RIGHT KNOB
+    318, // LEFT STICK
+    255, // RIGHT STICK UP-DOWN
+    376  // RIGHT STICK LEFT-RIGHT
+};
 const int minOuts[NUM_INPUTS] = {
     0,
     0,
@@ -45,9 +47,9 @@ const int maxOuts[NUM_INPUTS] = {
     MAX_ANGLE_COMMAND};
 
 /**************************************************************
- * Function: setupRadioReceiver
+ * Function: SetupRadioReceiver
 **************************************************************/
-void setupRadioReceiver(volatile float *radioRecieverVals)
+void SetupRadioReceiver(volatile float *radioRecieverVals)
 {
     // Setup pin-to-index mapping
     PIN_TO_CMD_VEC[PIN_LEFT_KNOB] = INDEX_LEFT_KNOB;
@@ -69,56 +71,59 @@ void setupRadioReceiver(volatile float *radioRecieverVals)
         radioRecieverVals[i] = 0.0;
     }
 
-    // Wait while calibration data is collected
-    // Serial.println(F("Gathering data from radio receiver for calibration..."));
-    // PCintPort::attachInterrupt(PIN_LEFT_STICK, &rising_calibration, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &rising_calibration, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &rising_calibration, RISING);
-    // PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &rising_calibration, RISING);
-    // PCintPort::attachInterrupt(PIN_LEFT_KNOB, &rising_calibration, RISING);
-
-    // int iii = 0;
-    // while (iii<10000) {iii++; Serial.print(iii);}
-    // delay(100);
-
-    // Calibrate
-    // TOOD: what was I doing here????????
-    // minIns[PIN_RIGHT_STICK_UPDOWN] = 1310;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] - RADIO_STICK_DIFF, 1000, 1600);
-    // maxIns[PIN_RIGHT_STICK_UPDOWN] = 1820;    //constrain(pwm_val_array[PIN_RIGHT_STICK_UPDOWN] + RADIO_STICK_DIFF, 1610, 2000); // = 1820;
-    // minIns[PIN_RIGHT_STICK_LEFTRIGHT] = 1268; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] - RADIO_STICK_DIFF, 1000, 1600); //1268;
-    // maxIns[PIN_RIGHT_STICK_LEFTRIGHT] = 2020; //constrain(pwm_val_array[PIN_RIGHT_STICK_LEFTRIGHT] + RADIO_STICK_DIFF, 1610, 2000); //2020;
-
-    // Set up normal interrupts for operation
-    Serial.println(F("Beginning normal radio reciever listener..."));
-    PCintPort::attachInterrupt(PIN_LEFT_STICK, &Falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &Falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &Falling, RISING);
-    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &Falling, RISING);
-    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &Falling, RISING);
+    // Set up interrupts to read radio PWM signals
+    PCintPort::attachInterrupt(PIN_LEFT_STICK, &Rising, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_UPDOWN, &Rising, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &Rising, RISING);
+    PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &Rising, RISING);
+    PCintPort::attachInterrupt(PIN_LEFT_KNOB, &Rising, RISING);
 }
 
-// --------------------------------------------------------------------
-// Utility Functions and ISRs (interrupt service routines)
-// --------------------------------------------------------------------
 /**************************************************************
- * Function: RunningAverage
+ * Function: RunningAveragePWM
 **************************************************************/
-float RunningAverage(int new_value, int interrupt_val_index)
+float RunningAveragePWM(long new_value, uint8_t interrupt_val_index)
 {
-#define AVERAGE_BUFFER_SIZE 15
+#define BUFFER_LENGTH 15
 
-    static int LM[AVERAGE_BUFFER_SIZE][NUM_INPUTS]; // LastMeasurements
+    static int last_measurements[BUFFER_LENGTH][NUM_INPUTS];
     static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
     static long sum[NUM_INPUTS] = ZEROS_ALL_INPUTS;
     static byte count = 0;
 
     // keep sum updated to improve speed.
-    sum[interrupt_val_index] -= LM[index[interrupt_val_index]][interrupt_val_index];
-    LM[index[interrupt_val_index]][interrupt_val_index] = new_value;
-    sum[interrupt_val_index] += LM[index[interrupt_val_index]][interrupt_val_index];
+    sum[interrupt_val_index] -= last_measurements[index[interrupt_val_index]][interrupt_val_index];
+    last_measurements[index[interrupt_val_index]][interrupt_val_index] = new_value;
+    sum[interrupt_val_index] += last_measurements[index[interrupt_val_index]][interrupt_val_index];
     index[interrupt_val_index]++;
-    index[interrupt_val_index] = index[interrupt_val_index] % AVERAGE_BUFFER_SIZE;
-    if (count < AVERAGE_BUFFER_SIZE)
+    index[interrupt_val_index] = index[interrupt_val_index] % BUFFER_LENGTH;
+    if (count < BUFFER_LENGTH)
+    {
+        count++;
+    }
+
+    return sum[interrupt_val_index] / count;
+}
+
+/**************************************************************
+ * Function: RunningAverageInit
+**************************************************************/
+float RunningAverageInit(long new_value, uint8_t interrupt_val_index)
+{
+#define BUFFER_LENGTH 15
+
+    static int last_measurements[BUFFER_LENGTH][NUM_INPUTS];
+    static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
+    static long sum[NUM_INPUTS] = ZEROS_ALL_INPUTS;
+    static byte count = 0;
+
+    // keep sum updated to improve speed.
+    sum[interrupt_val_index] -= last_measurements[index[interrupt_val_index]][interrupt_val_index];
+    last_measurements[index[interrupt_val_index]][interrupt_val_index] = new_value;
+    sum[interrupt_val_index] += last_measurements[index[interrupt_val_index]][interrupt_val_index];
+    index[interrupt_val_index]++;
+    index[interrupt_val_index] = index[interrupt_val_index] % BUFFER_LENGTH;
+    if (count < BUFFER_LENGTH)
     {
         count++;
     }
@@ -154,15 +159,42 @@ void Falling()
 
     const uint8_t interrupt_val_index = PIN_TO_CMD_VEC[PCintPort::arduinoPin]; // Translate pin # to index
 
-    const unsigned long pwm_val = micros() - last_rise_time[interrupt_val_index];
-    // scaled_val = map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
-    //                                                      minOuts[interrupt_val_index]*factor, maxOuts[interrupt_val_index]*factor)/factor;
+    const unsigned long raw_pwm_value = micros() - last_rise_time[interrupt_val_index];
 
-    const float scaled_val = pwm_val;
-    //  map(pwm_val, minIns[interrupt_val_index], maxIns[interrupt_val_index],
-    //                              minOuts[interrupt_val_index], maxOuts[interrupt_val_index]);
+    // If we are initializing, adjust the average reciever value towards the current value
+    if (is_initializing &&
+        ((interrupt_val_index == INDEX_RIGHT_STICK_LEFTRIGHT) ||
+         (interrupt_val_index == INDEX_RIGHT_STICK_UPDOWN)))
+    {
 
-    input_radio_values[interrupt_val_index] = RunningAverage(scaled_val, interrupt_val_index);
+        // Serial.print(interrupt_val_index);
+        // Serial.print(": ");
+        // Serial.print(reciever_value_average[interrupt_val_index]);
+        // Serial.print(" -> ");
+        // Serial.print(raw_pwm_value);
+        // Serial.print(" by increment of: ");
+
+        // const long diff = raw_pwm_value - reciever_value_average[interrupt_val_index];
+
+        // Protect against any weird anomalous values with the "min"
+        // And divide by 10 to give some
+        reciever_value_average[interrupt_val_index] = RunningAverageInit(raw_pwm_value, interrupt_val_index); // + min((diff / 10), 50);
+
+        // Serial.print(diff / 10);
+        Serial.print("AVG value: ");
+        Serial.println(reciever_value_average[interrupt_val_index]);
+
+        // TODO: count # of times, then decide to be done and change is_initializing
+    }
+
+    // TODO
+    const long scaled_val = map(raw_pwm_value,
+                                reciever_value_average[interrupt_val_index] - reciever_value_range[interrupt_val_index],
+                                reciever_value_average[interrupt_val_index] + reciever_value_range[interrupt_val_index],
+                                minOuts[interrupt_val_index],
+                                maxOuts[interrupt_val_index]);
+
+    input_radio_values[interrupt_val_index] = RunningAveragePWM(scaled_val, interrupt_val_index);
 
     // if (interrupt_val_index == INDEX_LEFT_STICK)
     // {

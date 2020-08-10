@@ -23,14 +23,14 @@ volatile bool interrupt_flag_MPU9250 = false;
 
 // Timer
 uint32_t last_update_microseconds = 0; // used to calculate integration interval
-
-float euler_angles[3]; // yaw, pitch, roll (3-2-1)
+float euler_angles[3];                 // yaw, pitch, roll (3-2-1)
 
 float quaternion_vector[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
 
 // initialize global junk
 volatile unsigned long last_rise_time[NUM_INPUTS];
 volatile float input_radio_values[NUM_INPUTS];
+bool is_initializing;
 
 /**************************************************************
  * Function: EstimateStateAndControlVec
@@ -56,6 +56,7 @@ inline void EstimateStateAndControlVec()
 **************************************************************/
 void setup()
 {
+    is_initializing = true;
 
     // Setup Serial Comms
     Serial.begin(115200);
@@ -72,7 +73,7 @@ void setup()
     SetupMPU9250();
 
     // Set up the radio reciever
-    setupRadioReceiver(input_radio_values);
+    SetupRadioReceiver(input_radio_values);
 
     pinMode(LED_LEVEL_INDICATOR, OUTPUT);
 
@@ -84,14 +85,14 @@ void setup()
     while (abs(euler_angles[1]) > 2.0)
     {
         EstimateStateAndControlVec();
-        Serial.print("Waiting on PITCH to stabilize: ");
-        Serial.println(euler_angles[1]);
+        // Serial.print("Waiting on PITCH to stabilize: ");
+        // Serial.println(euler_angles[1]);
     }
     while (abs(euler_angles[2]) > 2.0)
     {
         EstimateStateAndControlVec();
-        Serial.print("Waiting on ROLL to stabilize: ");
-        Serial.println(euler_angles[2]);
+        // Serial.print("Waiting on ROLL to stabilize: ");
+        // Serial.println(euler_angles[2]);
     }
     Serial.println(F("--------------------------------------------------"));
     Serial.println(F("*** PITCH and ROLL have stabilized! ***"));
@@ -100,6 +101,8 @@ void setup()
     Serial.print(F("Roll = "));
     Serial.println(euler_angles[2]);
     Serial.println(F("--------------------------------------------------"));
+
+    is_initializing = false;
 }
 
 /**************************************************************
