@@ -25,7 +25,7 @@ volatile bool interrupt_flag_MPU9250 = false;
 uint32_t last_update_microseconds = 0; // used to calculate integration interval
 float euler_angles[3];                 // yaw, pitch, roll (3-2-1)
 
-float quaternion_vector[4] ={ 1.0f, 0.0f, 0.0f, 0.0f }; // vector to hold quaternion
+float quaternion_vector[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
 
 // initialize global junk
 volatile unsigned long last_rise_time[NUM_INPUTS];
@@ -99,7 +99,6 @@ void setup()
     Serial.print(F("Roll = "));
     Serial.println(euler_angles[2]);
     Serial.println(F("--------------------------------------------------"));
-
 }
 
 /**************************************************************
@@ -119,10 +118,9 @@ void loop()
     // Serial.print(radioRecieverVals[3]);
     // Serial.print("\t");
     // Serial.print(radioRecieverVals[4]);
-    // Serial.println("");
 
-    // esc0.write(motor_control_vector[0]);
-    // esc1.write(motor_control_vector[1]);
-    // esc2.write(motor_control_vector[2]);
-    // esc3.write(motor_control_vector[3]);
+    motor0.write(motor_control_vector[0]);
+    motor1.write(motor_control_vector[1]);
+    motor2.write(motor_control_vector[2]);
+    motor3.write(motor_control_vector[3]);
 }

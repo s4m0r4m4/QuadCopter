@@ -12,7 +12,6 @@
         0, 0, 0, 0, 0,   \
     }
 
-
 // Radio initializing params
 #define RADIO_CALIBRATION_COUNTER_LIMIT 250
 bool is_initializing = true;
@@ -21,7 +20,7 @@ uint16_t radio_calibration_counter = 0;
 uint8_t PIN_TO_CMD_VEC[NUM_PINS];
 
 // All of these arrays are the same ordering
-int reciever_value_average[NUM_INPUTS] ={
+int reciever_value_average[NUM_INPUTS] = {
     1375, // LEFT KNOB
     1500, // RIGHT KNOB
     1500, // LEFT STICK
@@ -29,7 +28,7 @@ int reciever_value_average[NUM_INPUTS] ={
     1644  // RIGHT STICK LEFT-RIGHT
 };
 
-const int reciever_value_range[NUM_INPUTS] ={
+const int reciever_value_range[NUM_INPUTS] = {
     500, // LEFT KNOB
     500, // RIGHT KNOB
     318, // LEFT STICK
@@ -37,19 +36,19 @@ const int reciever_value_range[NUM_INPUTS] ={
     376  // RIGHT STICK LEFT-RIGHT
 };
 
-const int minOuts[NUM_INPUTS] ={
+const int minOuts[NUM_INPUTS] = {
     0,
     0,
     0,
     -MAX_ANGLE_COMMAND,
-    -MAX_ANGLE_COMMAND };
+    -MAX_ANGLE_COMMAND};
 
-const int maxOuts[NUM_INPUTS] ={
+const int maxOuts[NUM_INPUTS] = {
     100,
     100,
     180,
     MAX_ANGLE_COMMAND,
-    MAX_ANGLE_COMMAND };
+    MAX_ANGLE_COMMAND};
 
 /**************************************************************
  * Function: SetupRadioReceiver
@@ -90,7 +89,7 @@ void SetupRadioReceiver(volatile float *radioRecieverVals)
 **************************************************************/
 float RunningAveragePWM(long new_value, uint8_t interrupt_val_index)
 {
-    #define BUFFER_LENGTH 15
+#define BUFFER_LENGTH 15
 
     static int last_measurements[BUFFER_LENGTH][NUM_INPUTS];
     static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
@@ -121,8 +120,7 @@ float ExponentialMovingAverage(long old_value, long new_value)
 
     const float weight_decay_factor = 0.85;
 
-    return old_value * (weight_decay_factor)+new_value * (1-weight_decay_factor);
-
+    return old_value * (weight_decay_factor) + new_value * (1 - weight_decay_factor);
 }
 
 /**************************************************************
@@ -158,7 +156,7 @@ void Falling()
     // If we are initializing, adjust the average reciever value towards the current value
     if (is_initializing &&
         ((interrupt_val_index == INDEX_RIGHT_STICK_LEFTRIGHT) ||
-            (interrupt_val_index == INDEX_RIGHT_STICK_UPDOWN)))
+         (interrupt_val_index == INDEX_RIGHT_STICK_UPDOWN)))
     {
 
         radio_calibration_counter++;
@@ -169,30 +167,31 @@ void Falling()
                 reciever_value_average[interrupt_val_index],
                 raw_pwm_value);
 
-        Serial.print(interrupt_val_index);
-        Serial.print(" | NEW val: ");
-        Serial.print(raw_pwm_value);
-        Serial.print(" | AVG value: ");
-        Serial.println(reciever_value_average[interrupt_val_index]);
+        // Serial.print(interrupt_val_index);
+        // Serial.print(" | NEW val: ");
+        // Serial.print(raw_pwm_value);
+        // Serial.print(" | AVG value: ");
+        // Serial.println(reciever_value_average[interrupt_val_index]);
 
-        if (radio_calibration_counter > RADIO_CALIBRATION_COUNTER_LIMIT) {
+        if (radio_calibration_counter > RADIO_CALIBRATION_COUNTER_LIMIT)
+        {
             is_initializing = false;
         }
-
     }
 
     const long scaled_val = map(raw_pwm_value,
-        reciever_value_average[interrupt_val_index] - reciever_value_range[interrupt_val_index],
-        reciever_value_average[interrupt_val_index] + reciever_value_range[interrupt_val_index],
-        minOuts[interrupt_val_index],
-        maxOuts[interrupt_val_index]);
+                                reciever_value_average[interrupt_val_index] - reciever_value_range[interrupt_val_index],
+                                reciever_value_average[interrupt_val_index] + reciever_value_range[interrupt_val_index],
+                                minOuts[interrupt_val_index],
+                                maxOuts[interrupt_val_index]);
 
+    // TODO: consider another exponential moving average instead
     input_radio_values[interrupt_val_index] = RunningAveragePWM(scaled_val, interrupt_val_index);
 
     // if (interrupt_val_index == INDEX_LEFT_STICK)
     // {
     //     Serial.print(F("| FALLING average = "));
-    //     Serial.println(radioRecieverVals[interrupt_val_index]);
-    //     Serial.println(F("\t"));
+    //     Serial.println(input_radio_values[interrupt_val_index]);
+    //     Serial.println(F(" | \t"));
     // }
 }

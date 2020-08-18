@@ -2,6 +2,7 @@
 #include <quadcopter_constants.h>
 #include <controller.h>
 #include <global_junk.h>
+#include <serial_printing.h>
 
 int dumb_counter = 0;
 float integrated_pitch_err = 0.0f; // integral error for Controller
@@ -54,15 +55,20 @@ float motorValToThrustNonlinear(float val0)
 float thrustToMotorValNonlinear(float delta_thrust, float val0)
 {
     float thrust = max(0, delta_thrust + motorValToThrustNonlinear(val0));
+    float motor_val_out;
+
     if (thrust > forceAtLinToQuad)
     {
-        float valOut = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
-        return constrain(valOut, 0.0, 180.0);
+        // quadratic portion of curve
+        motor_val_out = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
     }
     else
     {
-        return constrain(thrust / (forceAtLinToQuad / (linToQuad - valMin)) + valMin, 0.0, 180.0);
+        // linear regime of fit curve
+        motor_val_out = thrust / (forceAtLinToQuad / (linToQuad - valMin)) + valMin;
     }
+
+    return constrain(motor_val_out, 0.0, 180.0);
 }
 
 /**************************************************************
@@ -80,11 +86,11 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
     // ---------------------------------------
 
     // ----------- PD/PID state gains -----------
-    // const float kD = 0.04769*2*radioRecieverVals[PIN_LEFT_KNOB]/100.0; // Derivitive feedback term
-    // const float kP = 0.6212*2*radioRecieverVals[PIN_LEFT_KNOB]/100.0;// Propoortional feedback term
-    const float kP = 0.07;  //*radioRecieverVals[PIN_LEFT_KNOB]/100.0;// Propoortional feedback term
+    // const float kD = 0.04769*2*radioRecieverVals[INDEX_LEFT_KNOB]/100.0; // Derivitive feedback term
+    // const float kP = 0.6212*2*radioRecieverVals[INDEX_LEFT_KNOB]/100.0;// Propoortional feedback term
+    const float kP = 0.07;  //*radioRecieverVals[INDEX_LEFT_KNOB]/100.0;// Propoortional feedback term
     const float kI = 0.55;  // Integral feedback term
-    const float kD = 0.055; // *radioRecieverVals[PIN_LEFT_KNOB]/100.0; // Derivitive feedback term
+    const float kD = 0.055; // *radioRecieverVals[INDEX_LEFT_KNOB]/100.0; // Derivitive feedback term
 
     // Reference adjustment
     const float Nbar = kP; //0.1118;
@@ -104,35 +110,36 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
     // float pitch_rate_err = 0.0;
     // float roll_rate_err = 0.0;
 
+    // TODO: can i remove this if check? dupliated below
     // use Euler angles to calculate errors only if within certain range
     if ((abs(euler_angles[1]) < 90) && (abs(euler_angles[2]) < 90))
     {
-        pitch = euler_angles[1];
-        roll = euler_angles[2];
+        pitch = euler_angles[2];
+        roll = euler_angles[1];
         pitch_rate = g[2]; // Through trial and error
         roll_rate = g[1];  // Through trial and error
     }
 
     // Read primary throttle value from left stick
-    float input_left_throttle = input_radio_values[PIN_LEFT_STICK];
+    float input_left_throttle = input_radio_values[INDEX_LEFT_STICK];
 
     // // use Euler angles to calculate errors only if within certain range
     if ((abs(euler_angles[1]) < 85) && (abs(euler_angles[2]) < 85))
     {
 
-        pitch_err = (-input_radio_values[PIN_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
-        roll_err = (input_radio_values[PIN_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
+        pitch_err = (-input_radio_values[INDEX_RIGHT_STICK_UPDOWN] - pitch) * DEG2RAD;
+        roll_err = (input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT] - roll) * DEG2RAD;
         // if euler_angles[1] is high, push on A3 and A0
         // if euler_angles[2] is high, push on A1 and A0
-        //   pitch_err = radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]-euler_angles[1];
-        //   roll_err = radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]-euler_angles[2];
+        //   pitch_err = radioRecieverVals[INDEX_RIGHT_STICK_UPDOWN]-euler_angles[1];
+        //   roll_err = radioRecieverVals[INDEX_RIGHT_STICK_LEFTRIGHT]-euler_angles[2];
         //   pitch_rate_err = 0-g[2]; // Through trial and error
         //   roll_rate_err = 0-g[1]; // Through trial and error
 
         // --- LQR Controller design ---
         // u = Nbar*r - K*x
-        // deltaF_pitch = (radioRecieverVals[PIN_RIGHT_STICK_UPDOWN]*Nbar - pitch*kP)*DEG2RAD + (0.0f*Nbar - pitch_rate*kD)*DEG2RAD;
-        // deltaF_roll = (radioRecieverVals[PIN_RIGHT_STICK_LEFTRIGHT]*Nbar - roll*kP)*DEG2RAD + (0.0f*Nbar - roll_rate*kD)*DEG2RAD;
+        // deltaF_pitch = (radioRecieverVals[INDEX_RIGHT_STICK_UPDOWN]*Nbar - pitch*kP)*DEG2RAD + (0.0f*Nbar - pitch_rate*kD)*DEG2RAD;
+        // deltaF_roll = (radioRecieverVals[INDEX_RIGHT_STICK_LEFTRIGHT]*Nbar - roll*kP)*DEG2RAD + (0.0f*Nbar - roll_rate*kD)*DEG2RAD;
         // ------------------------------
 
         // ------------------------------
@@ -169,37 +176,33 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
         }
     }
 
-    if (dumb_counter > 10)
+    if (dumb_counter > 15)
     {
-        // Serial.print(valLeftThrottle); Serial.print(F("|\t"));
-        //  Serial.print(radioRecieverVals[PIN_LEFT_KNOB]); Serial.print(F("\t"));
-        //  Serial.print(radioRecieverVals[PIN_RIGHT_KNOB]); Serial.print(F("|\t"));
-        Serial.print(input_radio_values[INDEX_LEFT_STICK]);
-        Serial.print(F("\t"));
-        Serial.print(input_radio_values[INDEX_RIGHT_STICK_UPDOWN]);
-        Serial.print(F("\t"));
-        Serial.print(input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT]);
-        Serial.print(F("|\t"));
-        // Serial.print(pitch); Serial.print(F("\t"));
-        // Serial.print(scale_val); Serial.print(F("|\t"));
+
+        Serial.print(input_left_throttle);
+        Serial.print(" | \t");
+
+        // Serial.print(pitch);
+        // Serial.print(F("\t"));
         Serial.print(pitch_err);
         Serial.print(F("\t"));
-        // Serial.print((0.0f - pitch_rate)); Serial.print(F("\t"));
         Serial.print(integrated_pitch_err);
-        Serial.print(F("\t"));
-        // Serial.print(integrated_roll_err); Serial.print(F("\t"));
-        Serial.print(deltaF_pitch);
-        Serial.println(F("\t"));
-        // Serial.print(deltaF_roll*100); Serial.print(F("\t"));
-        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch_old, valLeftThrottle)); Serial.print(F("\t"));
-        // Serial.print(thrustToMotorValNonlinear(deltaF_roll_old, valLeftThrottle)-valLeftThrottle); Serial.print(F("\t"));
-        // Serial.print(thrustToMotorValNonlinear(deltaF_pitch, valLeftThrottle)); Serial.print(F("\t"));
-        // Serial.print(thrustToMotorValNonlinear(deltaF_roll, valLeftThrottle)); Serial.print(F("\t"));
+        Serial.print(F("\t | "));
+        // Serial.print(deltaF_pitch);
+        // Serial.print(F(" | \t"));
 
-        // Serial.print(F("|\t"));
-        // serialPrintArray4(motor_control_vector);
-        //    // serialPrintArray(euler_angles);
-        // Serial.print("\n");
+        // Serial.print(roll);
+        // Serial.print(F("\t"));
+        Serial.print(roll_err);
+        Serial.print(F("\t"));
+        Serial.print(integrated_roll_err);
+        Serial.print(F("\t | "));
+        // Serial.print(deltaF_roll);
+        // Serial.print(F(" | \t"));
+
+        serialPrintArray4(motor_control_vector);
+        Serial.println("");
+
         dumb_counter = 0;
     }
     else
@@ -216,7 +219,7 @@ bool checkForActiveSignal()
 
     const unsigned long TIMEOUT_MICROSECONDS = 100000;
 
-    if (micros() - last_rise_time[INDEX_LEFT_STICK] > TIMEOUT_MICROSECONDS) //(micros()-prev_times[PIN_RIGHT_STICK_LEFTRIGHT]>limit) || (micros()-prev_times[PIN_RIGHT_STICK_UPDOWN]>limit) ||
+    if (micros() - last_rise_time[INDEX_LEFT_STICK] > TIMEOUT_MICROSECONDS)
     {
         return false;
     }
@@ -224,5 +227,4 @@ bool checkForActiveSignal()
     {
         return true;
     }
-
 }
