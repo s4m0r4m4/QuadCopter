@@ -25,12 +25,11 @@ volatile bool interrupt_flag_MPU9250 = false;
 uint32_t last_update_microseconds = 0; // used to calculate integration interval
 float euler_angles[3];                 // yaw, pitch, roll (3-2-1)
 
-float quaternion_vector[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
+float quaternion_vector[4] ={ 1.0f, 0.0f, 0.0f, 0.0f }; // vector to hold quaternion
 
 // initialize global junk
 volatile unsigned long last_rise_time[NUM_INPUTS];
 volatile float input_radio_values[NUM_INPUTS];
-bool is_initializing;
 
 /**************************************************************
  * Function: EstimateStateAndControlVec
@@ -56,7 +55,6 @@ inline void EstimateStateAndControlVec()
 **************************************************************/
 void setup()
 {
-    is_initializing = true;
 
     // Setup Serial Comms
     Serial.begin(115200);
@@ -102,7 +100,6 @@ void setup()
     Serial.println(euler_angles[2]);
     Serial.println(F("--------------------------------------------------"));
 
-    is_initializing = false;
 }
 
 /**************************************************************
