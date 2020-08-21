@@ -26,4 +26,7 @@ Uses code from kriswiner/MPU9250 to read accelerometers, magnetometer, and gyros
  ## Radio (FlySky FS-CT6) Setup
   TODO: Show pic
 
-
+## Other Components:
+- emacs motors
+- Arduino R3
+- Li-Ion Battery
