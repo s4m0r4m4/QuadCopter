@@ -21,9 +21,31 @@ Uses code from kriswiner/MPU9250 to read accelerometers, magnetometer, and gyros
  
  ## Radio (FlySky FS-CT6) Setup
   TODO: Show pic
+  
+## Emax MT1806-2280KV Motors:
+- https://www.banggood.com/EMAX-MT1806-KV2280-Brushless-Motor-For-Multirotor-p-933931.html?ID=521309&cur_warehouse=CN
+- Max Trust: 460g
+-	No. of cell: 2-3S
+-	Framework: 12N14P
+-	Propeller: 5" ~ 6"
+-	Length: 26.7mm
+-	Shaft: 2mm
+- Motor Casing	Diameter: 23mm
+-	Weight: 18g
+
+## Battery: 
+- http://www.getfpv.com/lumenier-1500mah-3s-45c-lipo-battery.html 
+-	Length	88 mm
+-	Width	35 mm
+-	Height	22 mm
+-	Weight	125g
+-	C-Rating	45c - Burst 90c
+-	Voltage	3s, 11.1v
+-	Connector	XT60
 
 ## Other Components:
-- Emax MT1806-2280KV motors: https://www.banggood.com/EMAX-MT1806-KV2280-Brushless-Motor-For-Multirotor-p-933931.html?ID=521309&cur_warehouse=CN
-- 5" propellers
-- Arduino Uno R3 (third-party brands are fine too)
-- Li-Ion Battery
+- 5030 propellers: https://www.amazon.com/gp/product/B00Y4QNSFA/ref=oh_aui_detailpage_o00_s01?ie=UTF8&psc=1 
+- Arduino Uno R3 (third-party brands are fine too): https://www.amazon.com/gp/product/B00P2FX9WY/ref=oh_aui_detailpage_o00_s03?ie=UTF8&psc=1 
+- Frame: FCMODEL X4 M280L Wheelbase Glass Fiber Across Mini Quadcopter Frame Kit DIY RC Multicopter FPV Drone: https://www.amazon.com/gp/product/B014KNMKF0/ref=oh_aui_detailpage_o04_s00?ie=UTF8&psc=1
+- Support Legs: https://www.amazon.com/gp/product/B00QHVVKEG/ref=ox_sc_sfl_title_1?ie=UTF8&psc=1&smid=A3Y26MC43SQCQ 
+- MPU9250: https://www.amazon.com/Mpu-9250-Nine-axis-Attitude-Acceleration-Magnetic/dp/B00OPNUO9U/ref=pd_cart_rp_2_3?_encoding=UTF8&psc=1&refRID=BYG3BGN2TGJM5B6HS7HY 
