@@ -14,7 +14,6 @@
 
 // Radio initializing params
 #define RADIO_CALIBRATION_COUNTER_LIMIT 250
-bool is_initializing = true;
 uint16_t radio_calibration_counter = 0;
 
 uint8_t PIN_TO_CMD_VEC[NUM_PINS];
@@ -112,8 +111,6 @@ float RunningAveragePWM(long new_value, uint8_t interrupt_val_index)
 
 /**************************************************************
  * Function: ExponentialMovingAverage
- * TODO: better memory management, consolidate with other RunningAverage method
- *       by allowing array pointer input
 **************************************************************/
 float ExponentialMovingAverage(long old_value, long new_value)
 {

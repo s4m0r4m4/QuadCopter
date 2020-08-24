@@ -3,7 +3,7 @@
 #ifndef QUADCOPTER_CONSTANTS_H
 #define QUADCOPTER_CONSTANTS_H
 
-#define LED_LEVEL_INDICATOR 8 // pin to light LED if level
+#define PIN_LED_LEVEL_INDICATOR 8 // pin to light LED if level
 
 #define NUM_PINS 12  // Number of potential input pins
 #define NUM_INPUTS 5 // Number of actually used inputs for radio

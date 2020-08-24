@@ -93,13 +93,12 @@ void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float
 
     if ((roll < 5) && (roll > -5) && (pitch < 5) && (pitch > -5))
     {
-        digitalWrite(LED_LEVEL_INDICATOR, HIGH);
+        digitalWrite(PIN_LED_LEVEL_INDICATOR, HIGH);
     }
     else
     {
-        digitalWrite(LED_LEVEL_INDICATOR, LOW);
+        digitalWrite(PIN_LED_LEVEL_INDICATOR, LOW);
     }
-    digitalWrite(LED_LEVEL_INDICATOR, HIGH);
 
     // float v_avg = 0;
     const float cutoff = 0.1;

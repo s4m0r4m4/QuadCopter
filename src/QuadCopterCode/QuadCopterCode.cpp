@@ -20,6 +20,7 @@ float motor_control_vector[4];
 
 // Interrupt flag for MPU 9250
 volatile bool interrupt_flag_MPU9250 = false;
+bool is_initializing = true;
 
 // Timer
 uint32_t last_update_microseconds = 0; // used to calculate integration interval
@@ -73,7 +74,7 @@ void setup()
     // Set up the radio reciever
     SetupRadioReceiver(input_radio_values);
 
-    pinMode(LED_LEVEL_INDICATOR, OUTPUT);
+    pinMode(PIN_LED_LEVEL_INDICATOR, OUTPUT);
 
     EstimateStateAndControlVec();
     Serial.print(F("Initial Pitch = "));
