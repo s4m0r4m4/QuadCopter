@@ -28,9 +28,9 @@ float thrustToMotorValLinear(float delta_thrust, float val0)
 }
 
 // ---------- Nonlinear transformation from desired force to motor command val ------------
-const float valMin = -30.0;
+const float valMin = -20.0;
 const float linToQuad = 40.0;        // value at which the curve-fit transitions from linear to quadratic
-const float forceAtLinToQuad = 0.15; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
+const float forceAtLinToQuad = 0.10; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
 const float maxThrustOverVal = (3.5 - forceAtLinToQuad) / ((180.0 - linToQuad) * (180.0 - linToQuad));
 
 /**************************************************************
