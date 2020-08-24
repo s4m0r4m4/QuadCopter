@@ -1,13 +1,9 @@
-These docs need lots of work :)
-
-Long story short - this code is for a 4 rotor quadcopter that uses the MPU-9250 chip for state estimation, and a FlySky FS-CT6B radio for control inputs.
-
-This is my hobby project, it is still very much in work!
-
+# Overview
+A simple quadcopter hobby project, build from scratch in terms of both software and hardware.
 
 # Suggested Software Setup
 1) Download VS code
-2) Insteall the PlatformIO extension (you can try to beta Arduino Extension, but you will probably have library linking issues)
+2) Install the PlatformIO extension (you can try to beta Arduino Extension, but you will probably have library linking issues)
 3) You'll have to install the Servo library using the PlatformIO Extension (use the library panel)
 4) It should build!
 
@@ -27,6 +23,7 @@ Uses code from kriswiner/MPU9250 to read accelerometers, magnetometer, and gyros
   TODO: Show pic
 
 ## Other Components:
-- emacs motors
-- Arduino R3
+- Emax MT1806-2280KV motors: https://www.banggood.com/EMAX-MT1806-KV2280-Brushless-Motor-For-Multirotor-p-933931.html?ID=521309&cur_warehouse=CN
+- 5" propellers
+- Arduino Uno R3 (third-party brands are fine too)
 - Li-Ion Battery
