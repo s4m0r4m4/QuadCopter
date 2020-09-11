@@ -87,12 +87,17 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
     // ----------- PD/PID state gains -----------
     // const float kD = 0.04769*2*radioRecieverVals[INDEX_LEFT_KNOB]/100.0; // Derivitive feedback term
     // const float kP = 0.6212*2*radioRecieverVals[INDEX_LEFT_KNOB]/100.0;// Propoortional feedback term
-    const float kP = 0.07;  //*radioRecieverVals[INDEX_LEFT_KNOB]/100.0;// Propoortional feedback term
-    const float kI = 0.55;  // Integral feedback term
-    const float kD = 0.055; // *radioRecieverVals[INDEX_LEFT_KNOB]/100.0; // Derivitive feedback term
+    // const float kP = 0.07;  //*radioRecieverVals[INDEX_LEFT_KNOB]/100.0;// Propoortional feedback term
+    // const float kI = 0.55;  // Integral feedback term
+    // const float kD = 0.055; // *radioRecieverVals[INDEX_LEFT_KNOB]/100.0; // Derivitive feedback term
+
+    // From Xcos simulation
+    const float kP = 0.05;
+    const float kI = 0.015;
+    const float kD = 0.02;
 
     // Reference adjustment
-    const float Nbar = kP; //0.1118;
+    // const float Nbar = kP; //0.1118;
     // ---------------------------------------
 
     float pitch_angle_deg = 0.0;
@@ -152,8 +157,13 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
                 // scale_val = min(1.0, (input_left_throttle / 100.0) * (input_left_throttle / 100.0));
                 pitch_err_rad = (-input_radio_values[INDEX_RIGHT_STICK_UPDOWN] - pitch_angle_deg) * DEG2RAD;
                 roll_err_rad = (input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT] - roll_angle_deg) * DEG2RAD;
-                integrated_pitch_err_rad = constrain(integrated_pitch_err_rad * 0.999 + (pitch_err_rad * delta_time), -0.25, 0.25);
-                integrated_roll_err_rad = constrain(integrated_roll_err_rad * 0.999 + (roll_err_rad * delta_time), -0.25, 0.25);
+
+                // Only accrue integrator error once we're flying (so it doesn't ratchet up on the ground)
+                if (input_left_throttle > 50)
+                {
+                    integrated_pitch_err_rad = constrain(integrated_pitch_err_rad * 0.999 + (pitch_err_rad * delta_time), -0.25, 0.25);
+                    integrated_roll_err_rad = constrain(integrated_roll_err_rad * 0.999 + (roll_err_rad * delta_time), -0.25, 0.25);
+                }
                 moment_pitch = (pitch_err_rad * kP) + ((0.0f - pitch_rate_deg) * DEG2RAD * kD) + (integrated_pitch_err_rad * kI);
                 moment_roll = (roll_err_rad * kP) + ((0.0f - roll_rate_deg) * DEG2RAD) * kD + (integrated_roll_err_rad * kI);
 
@@ -176,7 +186,6 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
             motor_control_vector[1] = 0.0;
             motor_control_vector[2] = 0.0;
             motor_control_vector[3] = 0.0;
-
         }
     }
 
