@@ -24,12 +24,13 @@ Iy = 3045011.97 * (1/1000) * (1/(1000^2)) * mass_adj;
 deltaZ = 29.29/1000; % Offset between propeller plane and center of mass
 % Iz = 4263587.01;
 
+% Matlab is 1-indexed, matrix access is (row, col)
 g0 = 9.81; % m/s^2
 A = zeros(4);
 A(3,1) = 1;
 A(4,2) = 1;
-A(1,3) = -g0*mass_real*deltaZ/Ix; % Valid for small angles
-A(2,4) = -g0*mass_real*deltaZ/Iy; % Valid for small angles
+A(1,3) = -g0*mass_adj*deltaZ/Ix; % Valid for small angles
+A(2,4) = -g0*mass_adj*deltaZ/Iy; % Valid for small angles
 
 r = 0.1116;
 f_to_m = [r 0; 0 r]*4; % the delta F is provided by 4 propellers

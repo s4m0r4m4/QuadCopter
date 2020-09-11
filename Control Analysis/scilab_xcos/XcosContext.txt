@@ -1,0 +1,20 @@
+A=[0,-3.1; 1,0];
+B=[292;0];
+C=[0,1];
+D=0;
+X0=[0;0];
+
+U0=0;
+USTEP=0.15;
+
+KP = 0.05;
+KI = 0.01;
+KD = 0.025;
+
+INTEGRATOR_INIT = 0;
+INTEGRATOR_UPPER = 0.25;
+INTEGRATOR_LOWER = -0.25;
+
+DELTA_F_SAT = 3.5/4;
+
+RAD2DEG = 180/(3.1415926);

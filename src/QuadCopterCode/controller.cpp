@@ -45,7 +45,6 @@ float motorValToThrustNonlinear(float val0)
     else
     {
         return (val0 - valMin) * forceAtLinToQuad / (linToQuad - valMin);
-        // return val0*forceAtLinToQuad/40;
     }
 }
 
@@ -177,6 +176,7 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
             motor_control_vector[1] = 0.0;
             motor_control_vector[2] = 0.0;
             motor_control_vector[3] = 0.0;
+
         }
     }
 
