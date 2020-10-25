@@ -4,7 +4,7 @@ A simple quadcopter hobby project, build from scratch in terms of both software 
 # Suggested Software Setup
 1) Download VS code
 2) Install the PlatformIO extension (you can try to beta Arduino Extension, but you will probably have library linking issues)
-3) You'll have to install the Servo library using the PlatformIO Extension (use the library panel)
+3) You'll have to install the "Servo" and "SD" libraries using the PlatformIO Extension (use the library panel)
 4) It should build!
 
 # Hardware Setup
