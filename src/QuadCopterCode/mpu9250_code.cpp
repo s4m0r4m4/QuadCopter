@@ -3,6 +3,7 @@
 #include <mpu9250_constants.h>
 #include <mpu9250_sensors.h>
 #include <Wire.h>
+#include <global_junk.h>
 
 /* MPU9250 Basic Example Code
  by: Kris Winer
@@ -95,12 +96,11 @@ void ReadMPU9250(float *a, float *g, float *m)
 void SetupMPU9250()
 {
 
-    int accel_range = 16; // ACC_FULL_SCALE_16_G;
-    int gyro_range = 500; // GYRO_FULL_SCALE_500_DPS;
-    int mag_bits = 16;
-    int gyro_dlpf = 41;  // 0, 41, 92, 184, 250
-    int accel_dlpf = 41; // 0, 41, 92, 184, 460
-    bool verbose = true;
+    uint8_t accel_range = 16; // ACC_FULL_SCALE_16_G;
+    int gyro_range = 500;     // GYRO_FULL_SCALE_500_DPS;
+    uint8_t mag_bits = 16;
+    uint8_t gyro_dlpf = 41;  // 0, 41, 92, 184, 250
+    uint8_t accel_dlpf = 41; // 0, 41, 92, 184, 460
     char dummy_str[50];
 
     Wire.begin();
@@ -135,7 +135,7 @@ void SetupMPU9250()
         Serial.print(F("[ERROR]: Bad Gyro range command: "));
         Serial.println(gyro_range);
     }
-    if (verbose)
+    if (VERBOSE)
     {
         Serial.print(F("[Setup] Setting Gryo command:"));
         sprintf(dummy_str, " %x (hex) =  %d (dec) \n", gyro_range_cmd,
@@ -171,7 +171,7 @@ void SetupMPU9250()
         Serial.print(F("[ERROR]: Bad Accelerometer range command"));
         Serial.println(accel_range_cmd);
     }
-    if (verbose)
+    if (VERBOSE)
     {
         Serial.print(F("[Setup] Setting Accelerometer command:"));
         sprintf(dummy_str, " %x (hex) =  %d (dec) \n", accel_range_cmd,
@@ -202,7 +202,7 @@ void SetupMPU9250()
     // Read the WHO_AM_I register, this is a good test of communication
     byte c = readByte(MPU9250_ADDRESS,
                       WHO_AM_I_MPU9250); // Read WHO_AM_I register for MPU-9250
-    if (SerialDebug)
+    if (VERBOSE)
     {
         Serial.print(F("MPU9250 I AM"));
         Serial.print(c, HEX);
@@ -212,7 +212,7 @@ void SetupMPU9250()
 
     if (c == WHO_AM_I_EXPECTED) // WHO_AM_I should always be 0x71
     {
-        if (SerialDebug)
+        if (VERBOSE)
         {
             Serial.println(F("MPU9250 is online..."));
 
@@ -245,39 +245,29 @@ void SetupMPU9250()
 
         initMPU9250(gyro_range_cmd, accel_range_cmd, gyro_dlpf, accel_dlpf);
 
-        if (SerialDebug)
+        if (VERBOSE)
         {
-            Serial.println(F("MPU9250 initialized for active data mode....")); // Initialize device
-                                                                               // for active mode
-                                                                               // read of
-                                                                               // acclerometer,
-                                                                               // gyroscope, and
-                                                                               // temperature
-        }
-        // Read the WHO_AM_I register of the magnetometer, this is a good test of
-        // communication
-        byte d = readByte(AK8963_ADDRESS,
-                          WHO_AM_I_AK8963); // Read WHO_AM_I register for AK8963
-        if (SerialDebug)
-        {
+            // Initialize device for active mode read of acclerometer, gyroscope, and temperature
+            Serial.println(F("MPU9250 initialized for active data mode...."));
+
+            // Read the WHO_AM_I register of the magnetometer, this is a good test of communication
+            byte d = readByte(AK8963_ADDRESS,
+                              WHO_AM_I_AK8963); // Read WHO_AM_I register for AK8963
+
             Serial.print(F("AK8963 I AM "));
             Serial.print(d, HEX);
             Serial.print(F(" I should be "));
             Serial.println(0x48, HEX);
         }
+
         // Get magnetometer calibration from AK8963 ROM
         initAK8963(magCalibration, mag_resolution_cmd);
-        if (SerialDebug)
-        {
-            Serial.println(F("AK8963 initialized for active data mode....")); // Initialize device
-                                                                              // for active mode
-                                                                              // read of
-                                                                              // magnetometer
-        }
 
-        if (SerialDebug)
+        if (VERBOSE)
         {
-            //  Serial.println(F("Calibration values: "));
+            // Initialize device for active mode read of magnetometer
+            Serial.println(F("AK8963 initialized for active data mode...."));
+
             Serial.print(F("X-Axis sensitivity adjustment value "));
             Serial.println(magCalibration[0], 2);
             Serial.print(F("Y-Axis sensitivity adjustment value "));
@@ -291,15 +281,10 @@ void SetupMPU9250()
         Serial.print(F("Could not connect to MPU9250: 0x"));
         Serial.println(c, HEX);
 
-        I2Cscan(); // TODO remove this
+        // I2Cscan(); // TODO remove this
         //II2C_ClearBus(); // TODO remove this
         //I2Cscan(); // TODO remove this
-
-        //    while(1) ; // Loop forever if communication doesn't happen
     }
-
-    // Set the time for the state estimator
-    // lastUpdate = micros();
 }
 
 // ###############################################################################################
@@ -914,74 +899,74 @@ void I2Cscan()
 // }
 
 // I2C recovery ========================================
-#define SDA A4
-#define SCL A5
+// #define SDA A4
+// #define SCL A5
 
-int I2C_ClearBus()
-{
-#if defined(TWCR) && defined(TWEN)
-    TWCR &= ~(_BV(TWEN)); //Disable the Atmel 2-Wire interface so we can control the SDA and SCL pins directly
-#endif
+// int I2C_ClearBus()
+// {
+// #if defined(TWCR) && defined(TWEN)
+//     TWCR &= ~(_BV(TWEN)); //Disable the Atmel 2-Wire interface so we can control the SDA and SCL pins directly
+// #endif
 
-    pinMode(SDA, INPUT_PULLUP); // Make SDA (data) and SCL (clock) pins Inputs with pullup.
-    pinMode(SCL, INPUT_PULLUP);
+//     pinMode(SDA, INPUT_PULLUP); // Make SDA (data) and SCL (clock) pins Inputs with pullup.
+//     pinMode(SCL, INPUT_PULLUP);
 
-    delay(2500); // Wait 2.5 secs. This is strictly only necessary on the first power
-    // up of the DS3231 module to allow it to initialize properly,
-    // but is also assists in reliable programming of FioV3 boards as it gives the
-    // IDE a chance to start uploaded the program
-    // before existing sketch confuses the IDE by sending Serial data.
+//     delay(2500); // Wait 2.5 secs. This is strictly only necessary on the first power
+//     // up of the DS3231 module to allow it to initialize properly,
+//     // but is also assists in reliable programming of FioV3 boards as it gives the
+//     // IDE a chance to start uploaded the program
+//     // before existing sketch confuses the IDE by sending Serial data.
 
-    boolean SCL_LOW = (digitalRead(SCL) == LOW); // Check is SCL is Low.
-    if (SCL_LOW)
-    {             //If it is held low Arduno cannot become the I2C master.
-        return 1; //I2C bus error. Could not clear SCL clock line held low
-    }
+//     boolean SCL_LOW = (digitalRead(SCL) == LOW); // Check is SCL is Low.
+//     if (SCL_LOW)
+//     {             //If it is held low Arduno cannot become the I2C master.
+//         return 1; //I2C bus error. Could not clear SCL clock line held low
+//     }
 
-    boolean SDA_LOW = (digitalRead(SDA) == LOW); // vi. Check SDA input.
-    int clockCount = 20;                         // > 2x9 clock
+//     boolean SDA_LOW = (digitalRead(SDA) == LOW); // vi. Check SDA input.
+//     int clockCount = 20;                         // > 2x9 clock
 
-    while (SDA_LOW && (clockCount > 0))
-    { //  vii. If SDA is Low,
-        clockCount--;
-        // Note: I2C bus is open collector so do NOT drive SCL or SDA high.
-        pinMode(SCL, INPUT);        // release SCL pullup so that when made output it will be LOW
-        pinMode(SCL, OUTPUT);       // then clock SCL Low
-        delayMicroseconds(10);      //  for >5uS
-        pinMode(SCL, INPUT);        // release SCL LOW
-        pinMode(SCL, INPUT_PULLUP); // turn on pullup resistors again
-        // do not force high as slave may be holding it low for clock stretching.
-        delayMicroseconds(10); //  for >5uS
-        // The >5uS is so that even the slowest I2C devices are handled.
-        SCL_LOW = (digitalRead(SCL) == LOW); // Check if SCL is Low.
-        int counter = 20;
-        while (SCL_LOW && (counter > 0))
-        { //  loop waiting for SCL to become High only wait 2sec.
-            counter--;
-            delay(100);
-            SCL_LOW = (digitalRead(SCL) == LOW);
-        }
-        if (SCL_LOW)
-        {             // still low after 2 sec error
-            return 2; // I2C bus error. Could not clear. SCL clock line held low by slave clock stretch for >2sec
-        }
-        SDA_LOW = (digitalRead(SDA) == LOW); //   and check SDA input again and loop
-    }
-    if (SDA_LOW)
-    {             // still low
-        return 3; // I2C bus error. Could not clear. SDA data line held low
-    }
+//     while (SDA_LOW && (clockCount > 0))
+//     { //  vii. If SDA is Low,
+//         clockCount--;
+//         // Note: I2C bus is open collector so do NOT drive SCL or SDA high.
+//         pinMode(SCL, INPUT);        // release SCL pullup so that when made output it will be LOW
+//         pinMode(SCL, OUTPUT);       // then clock SCL Low
+//         delayMicroseconds(10);      //  for >5uS
+//         pinMode(SCL, INPUT);        // release SCL LOW
+//         pinMode(SCL, INPUT_PULLUP); // turn on pullup resistors again
+//         // do not force high as slave may be holding it low for clock stretching.
+//         delayMicroseconds(10); //  for >5uS
+//         // The >5uS is so that even the slowest I2C devices are handled.
+//         SCL_LOW = (digitalRead(SCL) == LOW); // Check if SCL is Low.
+//         int counter = 20;
+//         while (SCL_LOW && (counter > 0))
+//         { //  loop waiting for SCL to become High only wait 2sec.
+//             counter--;
+//             delay(100);
+//             SCL_LOW = (digitalRead(SCL) == LOW);
+//         }
+//         if (SCL_LOW)
+//         {             // still low after 2 sec error
+//             return 2; // I2C bus error. Could not clear. SCL clock line held low by slave clock stretch for >2sec
+//         }
+//         SDA_LOW = (digitalRead(SDA) == LOW); //   and check SDA input again and loop
+//     }
+//     if (SDA_LOW)
+//     {             // still low
+//         return 3; // I2C bus error. Could not clear. SDA data line held low
+//     }
 
-    // else pull SDA line low for Start or Repeated Start
-    pinMode(SDA, INPUT);  // remove pullup.
-    pinMode(SDA, OUTPUT); // and then make it LOW i.e. send an I2C Start or Repeated start control.
-    // When there is only one I2C master a Start or Repeat Start has the same function as a Stop and clears the bus.
-    /// A Repeat Start is a Start occurring after a Start with no intervening Stop.
-    delayMicroseconds(10);      // wait >5uS
-    pinMode(SDA, INPUT);        // remove output low
-    pinMode(SDA, INPUT_PULLUP); // and make SDA high i.e. send I2C STOP control.
-    delayMicroseconds(10);      // x. wait >5uS
-    pinMode(SDA, INPUT);        // and reset pins as tri-state inputs which is the default state on reset
-    pinMode(SCL, INPUT);
-    return 0; // all ok
-}
+//     // else pull SDA line low for Start or Repeated Start
+//     pinMode(SDA, INPUT);  // remove pullup.
+//     pinMode(SDA, OUTPUT); // and then make it LOW i.e. send an I2C Start or Repeated start control.
+//     // When there is only one I2C master a Start or Repeat Start has the same function as a Stop and clears the bus.
+//     /// A Repeat Start is a Start occurring after a Start with no intervening Stop.
+//     delayMicroseconds(10);      // wait >5uS
+//     pinMode(SDA, INPUT);        // remove output low
+//     pinMode(SDA, INPUT_PULLUP); // and make SDA high i.e. send I2C STOP control.
+//     delayMicroseconds(10);      // x. wait >5uS
+//     pinMode(SDA, INPUT);        // and reset pins as tri-state inputs which is the default state on reset
+//     pinMode(SCL, INPUT);
+//     return 0; // all ok
+// }

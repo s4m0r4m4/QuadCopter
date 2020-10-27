@@ -7,10 +7,6 @@
 #include <math.h>
 
 #define MAX_ANGLE_COMMAND 10 // degrees
-#define ZEROS_ALL_INPUTS \
-    {                    \
-        0, 0, 0, 0, 0,   \
-    }
 
 // Radio initializing params
 #define RADIO_CALIBRATION_COUNTER_LIMIT 250
@@ -81,32 +77,6 @@ void SetupRadioReceiver(volatile float *radioRecieverVals)
     PCintPort::attachInterrupt(PIN_RIGHT_STICK_LEFTRIGHT, &Rising, RISING);
     PCintPort::attachInterrupt(PIN_RIGHT_KNOB, &Rising, RISING);
     PCintPort::attachInterrupt(PIN_LEFT_KNOB, &Rising, RISING);
-}
-
-/**************************************************************
- * Function: RunningAveragePWM
-**************************************************************/
-float RunningAveragePWM(long new_value, uint8_t interrupt_val_index)
-{
-#define BUFFER_LENGTH 15
-
-    static int last_measurements[BUFFER_LENGTH][NUM_INPUTS];
-    static byte index[NUM_INPUTS] = ZEROS_ALL_INPUTS;
-    static long sum[NUM_INPUTS] = ZEROS_ALL_INPUTS;
-    static byte count = 0;
-
-    // keep sum updated to improve speed.
-    sum[interrupt_val_index] -= last_measurements[index[interrupt_val_index]][interrupt_val_index];
-    last_measurements[index[interrupt_val_index]][interrupt_val_index] = new_value;
-    sum[interrupt_val_index] += last_measurements[index[interrupt_val_index]][interrupt_val_index];
-    index[interrupt_val_index]++;
-    index[interrupt_val_index] = index[interrupt_val_index] % BUFFER_LENGTH;
-    if (count < BUFFER_LENGTH)
-    {
-        count++;
-    }
-
-    return sum[interrupt_val_index] / count;
 }
 
 /**************************************************************
@@ -182,8 +152,7 @@ void Falling()
                                 minOuts[interrupt_val_index],
                                 maxOuts[interrupt_val_index]);
 
-    // TODO: consider another exponential moving average instead
-    input_radio_values[interrupt_val_index] = RunningAveragePWM(scaled_val, interrupt_val_index);
+    input_radio_values[interrupt_val_index] = ExponentialMovingAverage(input_radio_values[interrupt_val_index], scaled_val);
 
     // if (interrupt_val_index == INDEX_LEFT_STICK)
     // {

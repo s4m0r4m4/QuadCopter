@@ -4,7 +4,10 @@
 #include <global_junk.h>
 #include <serial_printing.h>
 
-int dumb_counter = 0;
+/**************************************************************
+ * Variables
+**************************************************************/
+byte dumb_counter = 0;
 float integrated_pitch_err_rad = 0.0f; // integral error for Controller
 float integrated_roll_err_rad = 0.0f;  // integral error for Controller
 
@@ -28,23 +31,23 @@ float thrustToMotorValLinear(float delta_thrust, float val0)
 }
 
 // ---------- Nonlinear transformation from desired force to motor command val ------------
-const float valMin = -20.0;
-const float linToQuad = 40.0;        // value at which the curve-fit transitions from linear to quadratic
-const float forceAtLinToQuad = 0.10; // pseudo-force when motors are driven with a value at the switch from linear to quadratic
-const float maxThrustOverVal = (3.5 - forceAtLinToQuad) / ((180.0 - linToQuad) * (180.0 - linToQuad));
+const float nMinimumValue = -20.0;
+const float nLinearToQuadtraicTransition = 40.0; // value at which the curve-fit transitions from linear to quadratic
+const float nForceAtLinearToQuadratic = 0.10;    // pseudo-force when motors are driven with a value at the switch from linear to quadratic
+const float nLinearSlope = (3.5 - nForceAtLinearToQuadratic) / ((180.0 - nLinearToQuadtraicTransition) * (180.0 - nLinearToQuadtraicTransition));
 
 /**************************************************************
  * Function: motorValToThrustNonlinear
 **************************************************************/
 float motorValToThrustNonlinear(float val0)
 {
-    if (val0 > linToQuad)
+    if (val0 > nLinearToQuadtraicTransition)
     {
-        return maxThrustOverVal * (val0 - linToQuad) * (val0 - linToQuad) + forceAtLinToQuad;
+        return nLinearSlope * (val0 - nLinearToQuadtraicTransition) * (val0 - nLinearToQuadtraicTransition) + nForceAtLinearToQuadratic;
     }
     else
     {
-        return (val0 - valMin) * forceAtLinToQuad / (linToQuad - valMin);
+        return (val0 - nMinimumValue) * nForceAtLinearToQuadratic / (nLinearToQuadtraicTransition - nMinimumValue);
     }
 }
 
@@ -56,15 +59,15 @@ float thrustToMotorValNonlinear(float delta_thrust, float val0)
     float thrust = max(0, delta_thrust + motorValToThrustNonlinear(val0));
     float motor_val_out;
 
-    if (thrust > forceAtLinToQuad)
+    if (thrust > nForceAtLinearToQuadratic)
     {
         // quadratic portion of curve
-        motor_val_out = sqrt((thrust - forceAtLinToQuad) / maxThrustOverVal) + linToQuad;
+        motor_val_out = sqrt((thrust - nForceAtLinearToQuadratic) / nLinearSlope) + nLinearToQuadtraicTransition;
     }
     else
     {
         // linear regime of fit curve
-        motor_val_out = thrust / (forceAtLinToQuad / (linToQuad - valMin)) + valMin;
+        motor_val_out = thrust / (nForceAtLinearToQuadratic / (nLinearToQuadtraicTransition - nMinimumValue)) + nMinimumValue;
     }
 
     return constrain(motor_val_out, 0.0, 180.0);
@@ -73,7 +76,7 @@ float thrustToMotorValNonlinear(float delta_thrust, float val0)
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void CalculateControlVector(float *euler_angles, float *g, float *motor_control_vector, float delta_time)
+void CalculateControlVector(float *euler_angles, float *angular_rates_deg, float *motor_control_vector, float delta_time)
 {
     // ----------- LQR state gains -----------
     // // Derivitive feedback term
@@ -100,17 +103,10 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
     // const float Nbar = kP; //0.1118;
     // ---------------------------------------
 
-    float pitch_angle_deg = 0.0;
-    float roll_angle_deg = 0;
-    float pitch_rate_deg = 0.0;
-    float roll_rate_deg = 0.0;
     float delta_force_pitch;
     float delta_force_roll;
     float pitch_err_rad = 0.0;
     float roll_err_rad = 0.0;
-
-    // Read primary throttle value from left stick
-    float input_left_throttle = input_radio_values[INDEX_LEFT_STICK];
 
     // // use Euler angles to calculate errors only if within certain range
     if ((abs(euler_angles[1]) < 85) && (abs(euler_angles[2]) < 85))
@@ -124,17 +120,14 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
             if (is_initializing)
             {
                 // if we're initializing, just send the raw left throttle
-                motor_control_vector[0] = thrustToMotorValNonlinear(0, input_left_throttle);
-                motor_control_vector[2] = thrustToMotorValNonlinear(0, input_left_throttle);
-                motor_control_vector[1] = thrustToMotorValNonlinear(0, input_left_throttle);
-                motor_control_vector[3] = thrustToMotorValNonlinear(0, input_left_throttle);
+                motor_control_vector[0] = thrustToMotorValNonlinear(0, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[2] = thrustToMotorValNonlinear(0, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[1] = thrustToMotorValNonlinear(0, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[3] = thrustToMotorValNonlinear(0, input_radio_values[INDEX_LEFT_STICK]);
             }
             else
             {
-                pitch_angle_deg = euler_angles[2];
-                roll_angle_deg = euler_angles[1];
-                pitch_rate_deg = g[2]; // Through trial and error
-                roll_rate_deg = g[1];  // Through trial and error
+
                 // TODO: move each control approach into its own function
                 // --- LQR Controller design ---
                 // u = Nbar*r - K*x
@@ -144,30 +137,31 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
 
                 // --- PID Controller design w/ integrator limit ---
                 // scale_val = min(1.0, (input_left_throttle / 100.0) * (input_left_throttle / 100.0));
-                pitch_err_rad = (-input_radio_values[INDEX_RIGHT_STICK_UPDOWN] - pitch_angle_deg) * DEG2RAD;
-                roll_err_rad = (input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT] - roll_angle_deg) * DEG2RAD;
+                pitch_err_rad = (-input_radio_values[INDEX_RIGHT_STICK_UPDOWN] - euler_angles[2]) * DEG2RAD;
+                roll_err_rad = (input_radio_values[INDEX_RIGHT_STICK_LEFTRIGHT] - euler_angles[1]) * DEG2RAD;
 
                 // Only accrue integrator error once we're flying (so it doesn't ratchet up on the ground)
-                if (input_left_throttle > 70)
+                if (input_radio_values[INDEX_LEFT_STICK] > 70)
                 {
                     integrated_pitch_err_rad = constrain(integrated_pitch_err_rad * 0.999 + (pitch_err_rad * delta_time), -0.25, 0.25);
                     integrated_roll_err_rad = constrain(integrated_roll_err_rad * 0.999 + (roll_err_rad * delta_time), -0.25, 0.25);
                 }
-                delta_force_pitch = (pitch_err_rad * kP) + ((0.0f - pitch_rate_deg) * DEG2RAD * kD) + (integrated_pitch_err_rad * kI);
-                delta_force_roll = (roll_err_rad * kP) + ((0.0f - roll_rate_deg) * DEG2RAD * kD) + (integrated_roll_err_rad * kI);
+
+                delta_force_pitch = (pitch_err_rad * kP) + ((0.0f - angular_rates_deg[2]) * DEG2RAD * kD) + (integrated_pitch_err_rad * kI);
+                delta_force_roll = (roll_err_rad * kP) + ((0.0f - angular_rates_deg[1]) * DEG2RAD * kD) + (integrated_roll_err_rad * kI);
 
                 // otherwise include pitch and roll force requirements
-                motor_control_vector[0] = thrustToMotorValNonlinear(-delta_force_pitch - delta_force_roll, input_left_throttle);
-                motor_control_vector[2] = thrustToMotorValNonlinear(delta_force_pitch + delta_force_roll, input_left_throttle);
-                motor_control_vector[1] = thrustToMotorValNonlinear(-delta_force_pitch + delta_force_roll, input_left_throttle);
-                motor_control_vector[3] = thrustToMotorValNonlinear(delta_force_pitch - delta_force_roll, input_left_throttle);
+                motor_control_vector[0] = thrustToMotorValNonlinear(-delta_force_pitch - delta_force_roll, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[2] = thrustToMotorValNonlinear(delta_force_pitch + delta_force_roll, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[1] = thrustToMotorValNonlinear(-delta_force_pitch + delta_force_roll, input_radio_values[INDEX_LEFT_STICK]);
+                motor_control_vector[3] = thrustToMotorValNonlinear(delta_force_pitch - delta_force_roll, input_radio_values[INDEX_LEFT_STICK]);
             }
         }
         else
         {
             if (DEBUG_MODE)
             {
-                Serial.println("-------------- DEAD ------------------");
+                Serial.println(F("-------------- DEAD ------------------"));
             }
 
             // if no radio signal, power off the motors
@@ -181,26 +175,22 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
     if (dumb_counter > 15 && DEBUG_MODE)
     {
 
-        // Serial.print(pitch);
-        // Serial.print(F("\t"));
-        Serial.print(pitch_err_rad);
-        Serial.print(F("\t"));
-        Serial.print(integrated_pitch_err_rad);
-        Serial.print(F("\t | "));
-        // Serial.print(deltaF_pitch);
-        // Serial.print(F(" | \t"));
+        // char sLine[100];
 
-        // Serial.print(roll);
-        // Serial.print(F("\t"));
-        Serial.print(roll_err_rad);
-        Serial.print(F("\t"));
-        Serial.print(integrated_roll_err_rad);
-        Serial.print(F("\t | "));
-        // Serial.print(deltaF_roll);
-        // Serial.print(F(" | \t"));
-
-        serialPrintArray4(motor_control_vector);
-        Serial.println("");
+        // sprintf(sLine, "%05.3f %05.3f %05.3f | %04.1f | %05.3f %05.3f | %05.3f %05.3f | %05.3f %05.3f %05.3f %05.3f\n",
+        //         euler_angles[0],
+        //         euler_angles[1],
+        //         euler_angles[2],
+        //         input_radio_values[INDEX_LEFT_STICK],
+        //         pitch_err_rad,
+        //         integrated_pitch_err_rad,
+        //         roll_err_rad,
+        //         integrated_roll_err_rad,
+        //         motor_control_vector[0],
+        //         motor_control_vector[1],
+        //         motor_control_vector[2],
+        //         motor_control_vector[3]);
+        // Serial.print(sLine);
 
         dumb_counter = 0;
     }
@@ -215,15 +205,6 @@ void CalculateControlVector(float *euler_angles, float *g, float *motor_control_
 **************************************************************/
 bool checkForActiveSignal()
 {
-
     const unsigned long TIMEOUT_MICROSECONDS = 100000;
-
-    if (micros() - last_rise_time[INDEX_LEFT_STICK] > TIMEOUT_MICROSECONDS)
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    return (micros() - last_rise_time[INDEX_LEFT_STICK]) < TIMEOUT_MICROSECONDS;
 }

@@ -182,7 +182,6 @@
 
 // -------------------------------------------------------------------------------------------------
 
-#define AHRS true        // set to false for basic data read
-#define SerialDebug true // set to true to get Serial output for debugging
+#define AHRS true // set to false for basic data read
 
 #endif

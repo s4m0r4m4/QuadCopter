@@ -9,8 +9,8 @@
  * Variables
 **************************************************************/
 float eInt[3] = {0.0f, 0.0f, 0.0f}; // vector to hold integral error for estimator Mahony method
-float x[3];                         // Linear position: x, y, z
-float v[3];                         // inear velocity: vx, vy, vz
+// float x[3];                         // Linear position: x, y, z
+// float v[3];                         // inear velocity: vx, vy, vz
 
 // global constants for 9 DoF fusion and AHRS (Attitude and Heading Reference System)
 // gyroscope measurement error in rads/s (start at 40 deg/s)
@@ -56,8 +56,6 @@ const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float *euler_angles)
 {
 
-    float pitch, yaw, roll;
-
     //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
     MadgwickQuaternionUpdate(a, g, m, q, delta_time);
     //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
@@ -74,24 +72,19 @@ void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float
     // Tait-Bryan angles as well as Euler angles are non-commutative; that is, the get the correct orientation the rotations must be
     // applied in the correct order which for this configuration is yaw, pitch, and then roll.
     // For more see http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles which has additional links.
-    yaw = atan2(
-        2.0f * (q[1] * q[2] + q[0] * q[3]),
-        q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
-    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    roll = -atan2(
-        -2.0f * (q[0] * q[1] + q[2] * q[3]),
-        -1.0f * (q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]));
 
-    yaw = yaw / DEG2RAD; // Declination at Burbank, California is 12.2 degrees. Minneapolis is basically 0deg
-    pitch = pitch / DEG2RAD;
-    roll = roll / DEG2RAD;
+    const float DECLINATION = 0.0f; // Declination at Burbank, California is 12.2 degrees. Minneapolis is basically 0deg
 
-    // Set gloabl variables (as degrees)
-    euler_angles[0] = yaw;
-    euler_angles[1] = roll;
-    euler_angles[2] = pitch;
+    // Yaw
+    euler_angles[0] = 1.0f / DEG2RAD * atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) - DECLINATION;
 
-    if ((roll < 5) && (roll > -5) && (pitch < 5) && (pitch > -5))
+    // Roll
+    euler_angles[1] = -1.0f / DEG2RAD * atan2(-2.0f * (q[0] * q[1] + q[2] * q[3]), -1.0f * (q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]));
+
+    // Pitch
+    euler_angles[2] = -1.0f / DEG2RAD * asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+
+    if ((euler_angles[1] < 5) && (euler_angles[1] > -5) && (euler_angles[2] < 5) && (euler_angles[2] > -5))
     {
         digitalWrite(PIN_LED_LEVEL_INDICATOR, HIGH);
     }
@@ -99,33 +92,6 @@ void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float
     {
         digitalWrite(PIN_LED_LEVEL_INDICATOR, LOW);
     }
-
-    // float v_avg = 0;
-    const float cutoff = 0.1;
-
-    //if (Now>5200000){
-    for (int j = 0; j < 3; j++)
-    {
-        //v_avg = 1.0/2.0*(v[j] + (v[j] + a[j]*delta_time));
-        if (abs(a[j]) > cutoff)
-        {
-            v[j] = v[j] + a[j] * delta_time;
-        }
-        if (abs(v[j]) > cutoff)
-        {
-            x[j] = x[j] + v[j] * delta_time;
-            //x[j] += v_avg*delta_time;
-        }
-    }
-
-    //  Serial.print(Now); Serial.print("\t");
-    // serialPrintArray(a);
-    // serialPrintArray(g);
-    // serialPrintArray(m);
-    //  serialPrintArray(v);
-    //  serialPrintArrayLn(x);
-    //  serialPrintArray(q);
-    // serialPrintArray(euler_angles);
 }
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
