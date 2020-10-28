@@ -40,19 +40,14 @@
  /twi.h utility file.
  */
 
-// Specify sensor full scale
-uint8_t Mmode =
-    0x06;                           // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
-float accel_res, gyro_res, mag_res; // scale resolutions per LSB for the sensors
+// Specify sensor full scale = 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
+const uint8_t magnetometer_mode = 0x06;
 
-float magCalibration[3] = {0, 0, 0},
-      magbias[3] = {0, 0, 0}; // Factory mag calibration and mag bias
-float gyroBias[3] = {0, 0, 0},
-      accelBias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
-int16_t tempCount;              // temperature raw count output
-float
-    temperature;   // Stores the real internal chip temperature in degrees Celsius
-float SelfTest[6]; // holds results of gyro and accelerometer self test
+float accel_res, gyro_res, mag_res; // scale resolutions per LSB for the sensors
+float magnetometer_calibration[3] = {0, 0, 0},
+      magnetometer_bias[3] = {0, 0, 0}; // Factory mag calibration and mag bias
+float gyro_bias[3] = {0, 0, 0},
+      accel_bias[3] = {0, 0, 0}; // Bias corrections for gyro and accelerometer
 
 // ################################################################################
 void ReadMPU9250(float *a, float *g, float *m)
@@ -60,14 +55,14 @@ void ReadMPU9250(float *a, float *g, float *m)
 
     // If intPin goes high, all data registers have new data
     if (readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
-    {                                           // On interrupt, check if data ready interrupt
-        readAccelData(a, accel_res, accelBias); // Read the x/y/z adc values
-        readGyroData(g, gyro_res);              // Read the x/y/z adc values
+    {                                            // On interrupt, check if data ready interrupt
+        readAccelData(a, accel_res, accel_bias); // Read the x/y/z adc values
+        readGyroData(g, gyro_res);               // Read the x/y/z adc values
     }
 
     if (readByte(AK8963_ADDRESS, AK8963_ST1) & 0x01)
-    {                                            // wait for magnetometer data ready bit to be set
-        readMagData(m, mag_res, magCalibration); // Read the x/y/z adc values
+    {                                                      // wait for magnetometer data ready bit to be set
+        readMagData(m, mag_res, magnetometer_calibration); // Read the x/y/z adc values
     }
     // With these settings the filter is updating at a ~145 Hz rate using the
     // Madgwick scheme and
@@ -215,35 +210,34 @@ void SetupMPU9250()
         if (VERBOSE)
         {
             Serial.println(F("MPU9250 is online..."));
+            float SelfTest[6]; // holds results of gyro and accelerometer self test
 
             MPU9250SelfTest(SelfTest); // Start by performing self test and reporting values
-            Serial.print(F("x-axis self test: acceleration trim within : "));
+            Serial.print(F("x-axis self test: acceleration trim within: "));
             Serial.print(SelfTest[0], 1);
             Serial.println(F("% of factory value"));
-            Serial.print(F("y-axis self test: acceleration trim within : "));
+            Serial.print(F("y-axis self test: acceleration trim within: "));
             Serial.print(SelfTest[1], 1);
             Serial.println(F("% of factory value"));
-            Serial.print(F("z-axis self test: acceleration trim within : "));
+            Serial.print(F("z-axis self test: acceleration trim within: "));
             Serial.print(SelfTest[2], 1);
             Serial.println(F("% of factory value"));
-            Serial.print(F("x-axis self test: gyration trim within : "));
+            Serial.print(F("Gryo self test trim within % of factory value (X,Y,Z): "));
             Serial.print(SelfTest[3], 1);
-            Serial.println(F("% of factory value"));
-            Serial.print(F("y-axis self test: gyration trim within : "));
             Serial.print(SelfTest[4], 1);
-            Serial.println(F("% of factory value"));
-            Serial.print(F("z-axis self test: gyration trim within : "));
             Serial.print(SelfTest[5], 1);
-            Serial.println(F("% of factory value"));
         }
 
-        calibrateMPU9250(gyroBias, accelBias); // Calibrate gyro and accelerometers,
-                                               // load biases in bias registers
-        //    Serial.print(F("GYRO BIASES: ")); Serial.print(gyroBias[0]);
-        //    Serial.print(F("\t")); Serial.print(gyroBias[1]); Serial.print(F("\t"));
-        //    Serial.print(gyroBias[2]); Serial.print(F("\n"));
+        calibrateMPU9250(gyro_bias, accel_bias); // Calibrate gyro and accelerometers,
+                                                 // load biases in bias registers
+        //    Serial.print(F("GYRO BIASES: ")); Serial.print(gyro_bias[0]);
+        //    Serial.print(F("\t")); Serial.print(gyro_bias[1]); Serial.print(F("\t"));
+        //    Serial.print(gyro_bias[2]); Serial.print(F("\n"));
 
         initMPU9250(gyro_range_cmd, accel_range_cmd, gyro_dlpf, accel_dlpf);
+
+        // Get magnetometer calibration from AK8963 ROM
+        initAK8963(magnetometer_calibration, mag_resolution_cmd);
 
         if (VERBOSE)
         {
@@ -258,22 +252,16 @@ void SetupMPU9250()
             Serial.print(d, HEX);
             Serial.print(F(" I should be "));
             Serial.println(0x48, HEX);
-        }
 
-        // Get magnetometer calibration from AK8963 ROM
-        initAK8963(magCalibration, mag_resolution_cmd);
-
-        if (VERBOSE)
-        {
             // Initialize device for active mode read of magnetometer
             Serial.println(F("AK8963 initialized for active data mode...."));
 
             Serial.print(F("X-Axis sensitivity adjustment value "));
-            Serial.println(magCalibration[0], 2);
+            Serial.println(magnetometer_calibration[0], 2);
             Serial.print(F("Y-Axis sensitivity adjustment value "));
-            Serial.println(magCalibration[1], 2);
+            Serial.println(magnetometer_calibration[1], 2);
             Serial.print(F("Z-Axis sensitivity adjustment value "));
-            Serial.println(magCalibration[2], 2);
+            Serial.println(magnetometer_calibration[2], 2);
         }
     }
     else
@@ -456,7 +444,7 @@ void initAK8963(float *destination, uint8_t mag_resolution_cmd)
     // Hz and 0110 for 100 Hz sample rates
     writeByte(AK8963_ADDRESS, AK8963_CNTL,
               mag_resolution_cmd << 4 |
-                  Mmode); // Set magnetometer data resolution and sample ODR
+                  magnetometer_mode); // Set magnetometer data resolution and sample ODR
     delay(10);
 }
 

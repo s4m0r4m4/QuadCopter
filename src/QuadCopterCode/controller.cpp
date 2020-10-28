@@ -76,7 +76,7 @@ float thrustToMotorValNonlinear(float delta_thrust, float val0)
 /**************************************************************
  * Function: calculateControlVector
 **************************************************************/
-void CalculateControlVector(float *euler_angles, float *angular_rates_deg, float *motor_control_vector, float delta_time)
+void CalculateControlVector(float *euler_angles, float *angular_rates_deg, float *motor_control_vector, float delta_time_sec)
 {
     // ----------- LQR state gains -----------
     // // Derivitive feedback term
@@ -143,8 +143,8 @@ void CalculateControlVector(float *euler_angles, float *angular_rates_deg, float
                 // Only accrue integrator error once we're flying (so it doesn't ratchet up on the ground)
                 if (input_radio_values[INDEX_LEFT_STICK] > 70)
                 {
-                    integrated_pitch_err_rad = constrain(integrated_pitch_err_rad * 0.999 + (pitch_err_rad * delta_time), -0.25, 0.25);
-                    integrated_roll_err_rad = constrain(integrated_roll_err_rad * 0.999 + (roll_err_rad * delta_time), -0.25, 0.25);
+                    integrated_pitch_err_rad = constrain(integrated_pitch_err_rad * 0.999 + (pitch_err_rad * delta_time_sec), -0.25, 0.25);
+                    integrated_roll_err_rad = constrain(integrated_roll_err_rad * 0.999 + (roll_err_rad * delta_time_sec), -0.25, 0.25);
                 }
 
                 delta_force_pitch = (pitch_err_rad * kP) + ((0.0f - angular_rates_deg[2]) * DEG2RAD * kD) + (integrated_pitch_err_rad * kI);

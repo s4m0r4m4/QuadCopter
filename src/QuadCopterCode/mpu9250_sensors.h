@@ -18,7 +18,7 @@ void readGyroData(float *gyro_vec, float gyro_res);
 /**************************************************************
  * Function: readMagData
 **************************************************************/
-void readMagData(float *mag_vec, float mag_res, float *magCalibration);
+void readMagData(float *mag_vec, float mag_res, float *magnetometer_calibration);
 
 /**************************************************************
  * Function: writeByte

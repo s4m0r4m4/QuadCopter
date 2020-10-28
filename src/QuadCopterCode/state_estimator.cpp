@@ -53,13 +53,13 @@ const float MAGDWICK_ZETA = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 /**************************************************************
  * Function: updateState
 **************************************************************/
-void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float *euler_angles)
+void UpdateState(float *a, float *g, float *m, float *q, float delta_time_sec, float *euler_angles)
 {
 
     //  MadgwickQuaternionUpdate(a[0]/9.81f, a[1]/9.81f, a[2]/9.81f, g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f,  m[1], m[0], m[2]);
-    MadgwickQuaternionUpdate(a, g, m, q, delta_time);
+    MadgwickQuaternionUpdate(a, g, m, q, delta_time_sec);
     //  MahonyQuaternionUpdate(a[0], a[1], a[2], g[0]*PI/180.0f, g[1]*PI/180.0f, g[2]*PI/180.0f, my, mx, mz);
-    // MahonyQuaternionUpdate(a, g, m, q, delta_time);
+    // MahonyQuaternionUpdate(a, g, m, q, delta_time_sec);
 
     adjustAccelData(a, q);
 
@@ -101,16 +101,15 @@ void UpdateState(float *a, float *g, float *m, float *q, float delta_time, float
 // The performance of the orientation filter is at least as good as conventional Kalman-based filtering algorithms
 // but is much less computationally intensive---it can be performed on a 3.3 V Pro Mini operating at 8 MHz!
 //void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
-void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_time)
+void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_time_sec)
 {
-    // TODO: make these consts
     float ax = a[0];
     float ay = a[1];
     float az = a[2];
 
-    float gx = g[0] * PI / 180.0f; // Pass gyro rate as rad/s
-    float gy = g[1] * PI / 180.0f;
-    float gz = g[2] * PI / 180.0f;
+    float gx = g[0] * DEG2RAD; // Pass gyro rate as rad/s
+    float gy = g[1] * DEG2RAD;
+    float gz = g[2] * DEG2RAD;
 
     float mx = m[1]; //switch mx and my
     float my = m[0]; //switch mx and my
@@ -219,7 +218,7 @@ void MadgwickQuaternionUpdate(float *a, float *g, float *m, float *q, float delt
 // in the LSM9DS0 sensor. This rotation can be modified to allow any convenient orientation convention.
 
 //void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
-void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_time)
+void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_time_sec)
 {
 
     //    MadgwickQuaternionUpdate(-ay, -ax, az, gy*PI/180.0f, gx*PI/180.0f,
@@ -309,7 +308,7 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_
     if (KI_MAHONEY > 0.0f)
     {
         eInt[0] += ex; // accumulate integral error
-        eInt[1] += ey; // missing delta_time? I guess thats fine as long as its taken into account in K_i
+        eInt[1] += ey; // missing delta_time_sec? I guess thats fine as long as its taken into account in K_i
         eInt[2] += ez;
     }
     else
@@ -328,10 +327,10 @@ void MahonyQuaternionUpdate(float *a, float *g, float *m, float *q, float delta_
     pa = q2;
     pb = q3;
     pc = q4;
-    q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * delta_time);
-    q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * delta_time);
-    q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * delta_time);
-    q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * delta_time);
+    q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * delta_time_sec);
+    q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * delta_time_sec);
+    q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * delta_time_sec);
+    q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * delta_time_sec);
 
     // Normalise quaternion
     norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);

@@ -102,11 +102,13 @@ void readGyroData(float *gyro_vec, float gyro_res)
 }
 
 // ###############################################################################################
-void readMagData(float *mag_vec, float mag_res, float *magCalibration) //int16_t * destination)
+void readMagData(float *mag_vec, float mag_res, float *magnetometer_calibration)
 {
     uint8_t rawData[7]; // x/y/z gyro register data, ST2 register stored here, must read ST2 at end of data acquisition
     int16_t tmp[3];
-    float magbias[3] = {+609.360, +447.380, -400.095}; // User environmental x, y, and z-axis correction in milliGauss
+
+    // TODO
+    float magnetometer_bias[3] = {+609.360, +447.380, -400.095}; // User environmental x, y, and z-axis correction in milliGauss
     //  237.5 +N // from http://www.ngdc.noaa.gov/geomag-web/#igrfwmm
     //  51.672 + E
     // 404.095 + Up vertical
@@ -114,8 +116,8 @@ void readMagData(float *mag_vec, float mag_res, float *magCalibration) //int16_t
     if (readByte(AK8963_ADDRESS, AK8963_ST1) & 0x01)
     {                                                             // wait for magnetometer data ready bit to be set
         readBytes(AK8963_ADDRESS, AK8963_XOUT_L, 7, &rawData[0]); // Read the six raw data and ST2 registers sequentially into data array
-        uint8_t c = rawData[6];                                   // End data read by reading ST2 register
-        if (!(c & 0x08))
+
+        if (!(rawData[6] & 0x08))                             // End data read by reading ST2 register
         {                                                     // Check if magnetic sensor overflow set, if not then report data
             tmp[0] = ((int16_t)rawData[1] << 8) | rawData[0]; // Turn the MSB and LSB into a signed 16-bit value
             tmp[1] = ((int16_t)rawData[3] << 8) | rawData[2]; // Data stored as little Endian
@@ -125,9 +127,9 @@ void readMagData(float *mag_vec, float mag_res, float *magCalibration) //int16_t
 
     // Calculate the magnetometer values in milliGauss
     // Include factory calibration per data sheet and user environmental corrections
-    mag_vec[0] = (float)tmp[0] * mag_res * magCalibration[0] - magbias[0]; // get actual magnetometer value, this depends on scale being set
-    mag_vec[1] = (float)tmp[1] * mag_res * magCalibration[1] - magbias[1];
-    mag_vec[2] = (float)tmp[2] * mag_res * magCalibration[2] - magbias[2];
+    mag_vec[0] = (float)tmp[0] * mag_res * magnetometer_calibration[0] - magnetometer_bias[0]; // get actual magnetometer value, this depends on scale being set
+    mag_vec[1] = (float)tmp[1] * mag_res * magnetometer_calibration[1] - magnetometer_bias[1];
+    mag_vec[2] = (float)tmp[2] * mag_res * magnetometer_calibration[2] - magnetometer_bias[2];
 }
 
 // ###############################################################################################
