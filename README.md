@@ -43,6 +43,12 @@ Uses code from kriswiner/MPU9250 to read accelerometers, magnetometer, and gyros
 -	Voltage	3s, 11.1v
 -	Connector	XT60
 
+## MicroSD Card Reader
+- MicroSD card reader for Arduino Uno: https://www.amazon.com/gp/product/B07BJ2P6X6/ref=ppx_yo_dt_b_asin_title_o05_s00?ie=UTF8&psc=1
+- MicroSD Card w/ SD-card adapter: https://www.amazon.com/gp/product/B07YLYX4NL/ref=ppx_yo_dt_b_asin_title_o04_s00?ie=UTF8&psc=1
+- You can include an SD card reader if you chose to store data while flying (which is a good idea!)
+- Since the SD card require a lot of data transfer, you'll get the best performance when connected up to the hardware SPI pins on the Arduino Uno: digital 13 (SCK), 12 (MISO) and 11 (MOSI). You will also need a fourth pin for the 'chip/secondary select' (SS) line. 
+
 ## Other Components:
 - 5030 propellers: https://www.amazon.com/gp/product/B00Y4QNSFA/ref=oh_aui_detailpage_o00_s01?ie=UTF8&psc=1 
 - Arduino Uno R3 (third-party brands are fine too): https://www.amazon.com/gp/product/B00P2FX9WY/ref=oh_aui_detailpage_o00_s03?ie=UTF8&psc=1 
